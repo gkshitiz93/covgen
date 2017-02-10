@@ -1,9 +1,9 @@
 #Makefile for compilations
 all:
-	@echo "Everything"
+	$(MAKE) -C bin ex_parser
 
 run:
 	@echo "Run the executables"
 
 clean:
-	@echo "Removing files"
+	$(MAKE) -C bin clean
