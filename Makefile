@@ -1,6 +1,13 @@
 #Makefile for compilations
 all:
-	$(MAKE) -C bin ex_parser
+	@clear
+	$(MAKE) -C bin covgen
+
+test:
+	$(MAKE) -C bin test
+
+data:
+	$(MAKE) -C bin data
 
 run:
 	@echo "Run the executables"

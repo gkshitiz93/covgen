@@ -1,3 +1,4 @@
 pyverilog/
-amber25/
+rtl/
 bin/
+src/*.pyc

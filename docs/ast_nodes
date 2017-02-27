@@ -1,0 +1,114 @@
+class Node(object):
+    '''Abstact class for every element in parser'''
+        buf.write(lead + self.__class__.__name__ + ': ')
+class Source(Node):
+class Description(Node):
+class ModuleDef(Node):
+class Paramlist(Node):
+class Portlist(Node):
+class Port(Node):
+class Width(Node):
+class Length(Width): pass
+class Identifier(Node):
+class Value(Node):
+class Constant(Value):
+class IntConst(Constant): pass
+class FloatConst(Constant): pass
+class StringConst(Constant): pass
+class Variable(Value):
+class Input(Variable): pass
+class Output(Variable): pass
+class Inout(Variable): pass
+class Tri(Variable): pass
+class Wire(Variable): pass
+class Reg(Variable): pass
+class WireArray(Variable):
+class RegArray(Variable):
+class Integer(Variable): pass
+class Real(Variable): pass
+class Genvar(Variable): pass
+class Ioport(Node):
+class Parameter(Node):
+class Localparam(Parameter): pass
+class Supply(Parameter) : pass
+class Decl(Node):
+class Concat(Node):
+class LConcat(Concat): pass
+class Repeat(Node):
+class Partselect(Node):
+class Pointer(Node):
+class Lvalue(Node):
+class Rvalue(Node):
+class Operator(Node):
+        ret = '('+self.__class__.__name__
+class UnaryOperator(Operator):
+class Uplus(UnaryOperator): pass
+class Uminus(UnaryOperator): pass
+class Ulnot(UnaryOperator): pass
+class Unot(UnaryOperator): pass
+class Uand(UnaryOperator): pass
+class Unand(UnaryOperator): pass
+class Uor(UnaryOperator): pass
+class Unor(UnaryOperator): pass
+class Uxor(UnaryOperator): pass
+class Uxnor(UnaryOperator): pass
+class Power(Operator): pass
+class Times(Operator): pass
+class Divide(Operator): pass
+class Mod(Operator): pass
+class Plus(Operator): pass
+class Minus(Operator): pass
+class Sll(Operator): pass
+class Srl(Operator): pass
+class Sra(Operator): pass
+class LessThan(Operator): pass
+class GreaterThan(Operator): pass
+class LessEq(Operator): pass
+class GreaterEq(Operator): pass
+class Eq(Operator): pass
+class NotEq(Operator): pass
+class Eql(Operator): pass # ===
+class NotEql(Operator): pass # !==
+class And(Operator): pass
+class Xor(Operator): pass
+class Xnor(Operator): pass
+class Or(Operator): pass
+class Land(Operator): pass
+class Lor(Operator): pass
+class Cond(Operator):
+class Assign(Node):
+class Always(Node):
+class SensList(Node):
+class Sens(Node):
+class Substitution(Node):
+class BlockingSubstitution(Substitution): pass
+class NonblockingSubstitution(Substitution): pass
+class IfStatement(Node):
+class ForStatement(Node):
+class WhileStatement(Node):
+class CaseStatement(Node):
+class CasexStatement(CaseStatement): pass
+class Case(Node):
+class Block(Node):
+class Initial(Node):
+class EventStatement(Node):
+class WaitStatement(Node):
+class ForeverStatement(Node):
+class DelayStatement(Node):
+class InstanceList(Node):
+class Instance(Node):
+class ParamArg(Node):
+class PortArg(Node):
+class Function(Node):
+class FunctionCall(Node):
+class Task(Node):
+class TaskCall(Node):
+class GenerateStatement(Node):
+class SystemCall(Node):
+class IdentifierScopeLabel(Node):
+class IdentifierScope(Node):
+class Pragma(Node):
+class PragmaEntry(Node):
+class Disable(Node):
+class ParallelBlock(Node):
+class SingleStatement(Node):
