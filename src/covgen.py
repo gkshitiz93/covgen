@@ -6,6 +6,7 @@ from optparse import OptionParser
 
 import pyverilog.utils.version
 from pyverilog.dataflow.dataflow_analyzer import VerilogDataflowAnalyzer
+from pyverilog.dataflow.visit import AlwaysInfo
 
 class CoverageGenerator(VerilogDataflowAnalyzer):
     def __init__(self, filelist, topmodule='TOP', preprocess_include=None,preprocess_define=None):
@@ -44,6 +45,36 @@ class CoverageGenerator(VerilogDataflowAnalyzer):
             buf.write('\n')
 
         return
+
+    def printFrames(self,buf=sys.stdout):
+        for dk,dv in self.frametable.dict.items():
+            string='Scope = ' + str(dk) + '\n'
+            buf.write(string)
+            string='Frametype = ' + dv.getFrametype() + '\n'
+            buf.write(string)
+           
+            buf.write('Signals:\n')
+            for name,var in dv.getSignals().items():
+                string='Name : ' + str(name) + ' Var: ' + str(var) + '\n'
+                buf.write(string)
+            
+            buf.write('Consts:\n')
+            for name,var in dv.getConsts().items():
+                string='Name : ' + str(name) + ' Var: ' + str(var) + '\n'
+                buf.write(string)
+
+            if(dv.isAlways()):
+                info=dv.getAlwaysInfo()
+                if(isinstance(info,AlwaysInfo)):
+                    info.printInfo(buf)
+
+    def showModuleInfo(self,buf=sys.stdout):
+        mtable = self.frametable.moduleinfotable
+        for name in mtable.get_names():
+            buf.write('Module: ' + name + '\n')
+            for key,info in mtable.getAlways(name).items():
+                info.printInfo(buf)
+            buf.write('\n')
     
     def showAST(self,buf=sys.stdout):
         ast=self.parse()

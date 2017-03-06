@@ -1,9 +1,9 @@
 #Makefile for execution
 covgen:
-	@python ../src/main.py -t a25_wishbone ../rtl/amber25/a25_wishbone.v
+	@python ../src/main.py -t top ../rtl/wishbone.v
 
 test:
-	@python ../src/test.py ../rtl/test.v
+	@python ../src/main.py -t top ../rtl/test.v
 
 data:
 	@python ../src/example_dataflow_analyzer.py ../rtl/test.v

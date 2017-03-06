@@ -43,6 +43,14 @@ def main():
     f=open("info","w")
     generator.showInfo(f)
     f.close()
+    
+    f=open("frame","w")
+    generator.printFrames(f)
+    f.close()
+    
+    f=open("modules","w")
+    generator.showModuleInfo(f)
+    f.close()
 
 if __name__ == '__main__':
     main()

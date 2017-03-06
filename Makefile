@@ -4,7 +4,12 @@ all:
 	$(MAKE) -C bin covgen
 
 test:
+	@clear
 	$(MAKE) -C bin test
+
+decode:
+	@clear
+	$(MAKE) -C bin decode
 
 data:
 	$(MAKE) -C bin data
