@@ -67,13 +67,29 @@ class CoverageGenerator(VerilogDataflowAnalyzer):
         mtable = self.frametable.moduleinfotable
         for name in mtable.get_names():
             buf.write('Module: ' + name + '\n')
-            for key,info in mtable.getAlways(name).items():
-                info.printInfo(buf)
+            if mtable.getAlways(name):
+                for key,info in mtable.getAlways(name).items():
+                    info.printInfo(buf)
+                    buf.write('\n')
                 buf.write('\n')
-            buf.write('\n')
-            for name,var in mtable.getConsts(name).items():
-                string='Name : ' + str(name) + ' Var: ' + str(var) + '\n'
-                buf.write(string)
+            
+            if mtable.getConsts(name):
+                buf.write('Constants:\n')
+                for name,var in mtable.getConsts(name).items():
+                    string='Name : ' + str(name) + ' Var: ' + str(var) + '\n'
+                    buf.write(string)
+
+            if mtable.getSignals(name):
+                buf.write('Signals:\n')
+                for name,var in mtable.getSignals(name).items():
+                    string='Name : ' + str(name) + ' Var: ' + str(var) + '\n'
+                    buf.write(string)
+            
+            if mtable.getIOPorts(name):
+                buf.write('IOPorts:\n')
+                for port in mtable.getIOPorts(name):
+                    string='Name : ' + str(port) + '\n'
+                    buf.write(string)
 
             buf.write('\n')
     
