@@ -63,17 +63,18 @@ class CoverageGenerator(VerilogDataflowAnalyzer):
                 string='Name : ' + str(name) + ' Var: ' + str(var) + '\n'
                 buf.write(string)
 
-            if(dv.isAlways()):
-                info=dv.getAlwaysInfo()
-                if(isinstance(info,AlwaysInfo)):
-                    info.printInfo(buf)
-
     def showModuleInfo(self,buf=sys.stdout):
         mtable = self.frametable.moduleinfotable
         for name in mtable.get_names():
             buf.write('Module: ' + name + '\n')
             for key,info in mtable.getAlways(name).items():
                 info.printInfo(buf)
+                buf.write('\n')
+            buf.write('\n')
+            for name,var in mtable.getConsts(name).items():
+                string='Name : ' + str(name) + ' Var: ' + str(var) + '\n'
+                buf.write(string)
+
             buf.write('\n')
     
     def showAST(self,buf=sys.stdout):
