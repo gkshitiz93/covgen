@@ -5,8 +5,8 @@ covgen:
 test:
 	@python ../src/main.py -t top ../rtl/test.v
 
-data:
-	@python ../src/example_dataflow_analyzer.py ../rtl/test.v
+dataflow:
+	@python ../src/example_dataflow_analyzer.py -t top ../rtl/test.v
 
 ex_parser:
 	@python ../src/example_parser.py ../rtl/amber25/a25_wishbone.v

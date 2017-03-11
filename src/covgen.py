@@ -65,29 +65,27 @@ class CoverageGenerator(VerilogDataflowAnalyzer):
 
     def showModuleInfo(self,buf=sys.stdout):
         mtable = self.frametable.moduleinfotable
-        for name in mtable.get_names():
-            buf.write('Module: ' + name + '\n')
-            if mtable.getAlways(name):
-                for key,info in mtable.getAlways(name).items():
-                    info.printInfo(buf)
-                    buf.write('\n')
-                buf.write('\n')
+        for modulename in mtable.get_names():
+            buf.write('Module: ' + modulename + '\n')
+            module=mtable.getModule(modulename)
+            module.findInteresting()
+            module.printInfo(buf)
             
-            if mtable.getConsts(name):
-                buf.write('Constants:\n')
-                for name,var in mtable.getConsts(name).items():
+            if mtable.getConsts(modulename):
+                buf.write('\nConstants:\n')
+                for name,var in mtable.getConsts(modulename).items():
                     string='Name : ' + str(name) + ' Var: ' + str(var) + '\n'
                     buf.write(string)
 
-            if mtable.getSignals(name):
-                buf.write('Signals:\n')
-                for name,var in mtable.getSignals(name).items():
+            if mtable.getSignals(modulename):
+                buf.write('\nSignals:\n')
+                for name,var in mtable.getSignals(modulename).items():
                     string='Name : ' + str(name) + ' Var: ' + str(var) + '\n'
                     buf.write(string)
             
-            if mtable.getIOPorts(name):
-                buf.write('IOPorts:\n')
-                for port in mtable.getIOPorts(name):
+            if mtable.getIOPorts(modulename):
+                buf.write('\nIOPorts:\n')
+                for port in mtable.getIOPorts(modulename):
                     string='Name : ' + str(port) + '\n'
                     buf.write(string)
 

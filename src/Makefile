@@ -5,8 +5,8 @@ all:
 test:
 	$(MAKE) -C ../ test
 
-data:
-	$(MAKE) -C ../ data
+dataflow:
+	$(MAKE) -C ../ dataflow
 
 clean:
 	$(MAKE) -C ../ clean

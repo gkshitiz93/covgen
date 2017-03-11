@@ -11,8 +11,8 @@ decode:
 	@clear
 	$(MAKE) -C bin decode
 
-data:
-	$(MAKE) -C bin data
+dataflow:
+	$(MAKE) -C bin dataflow
 
 run:
 	@echo "Run the executables"
