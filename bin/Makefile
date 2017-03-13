@@ -1,11 +1,11 @@
 #Makefile for execution
-covgen:
+covgen: clean
 	@python ../src/main.py -t top ../rtl/wishbone.v
 
-test:
+test: clean
 	@python ../src/main.py -t top ../rtl/test.v
 
-dataflow:
+dataflow: clean
 	@python ../src/example_dataflow_analyzer.py -t top ../rtl/test.v
 
 ex_parser:
@@ -15,4 +15,4 @@ ex_dataflow:
 	@python ../src/example_dataflow_analyzer.py -t a25_wishbone ../rtl/amber25/a25_wishbone.v
 
 clean:
-	#rm *pyc *out
+	rm -rf SVA/

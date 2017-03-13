@@ -34,23 +34,25 @@ def main():
         showVersion()
 
     generator = CoverageGenerator(filelist, options.topmodule,preprocess_include=options.include,preprocess_define=options.define)
-    generator.generate()
+    g=open("props","w")
+    generator.generate(g)
 
     f=open("ast","w")
     generator.showAST(f)
     f.close()
 
-    f=open("info","w")
-    generator.showInfo(f)
-    f.close()
-    
-    f=open("frame","w")
-    generator.printFrames(f)
-    f.close()
+    #f=open("info","w")
+    #generator.showInfo(f)
+    #f.close()
+    #
+    #f=open("frame","w")
+    #generator.printFrames(f)
+    #f.close()
     
     f=open("modules","w")
     generator.showModuleInfo(f)
     f.close()
+    g.close()
 
 if __name__ == '__main__':
     main()

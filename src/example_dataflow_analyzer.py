@@ -83,7 +83,10 @@ def main():
         binddict = analyzer.getBinddict()
         print('Bind:')
         for bk, bv in sorted(binddict.items(), key=lambda x:str(x[0])):
+            print(bk.__class__.__name__)
+            print(bk)
             for bvi in bv:
+                print(bvi.__class__.__name__)
                 print(bvi.tostr())
 
 if __name__ == '__main__':
