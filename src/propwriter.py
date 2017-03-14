@@ -30,6 +30,7 @@ class PropWriter(NodeVisitor):
         self.moduleinfotable.setCurrent(top)
         self.chain = ScopeChain()
         self.chain += ScopeLabel(top, 'module')
+        self.optimizer = VerilogOptimizer({}, {})
         self.buf=buf
 
     def start_visit(self):
@@ -44,6 +45,32 @@ class PropWriter(NodeVisitor):
         os.chdir(oldpath)
 
     def visit_ModuleDef(self, node):
+        filename=str(self.chain)+'_test'
+        f=open(filename,"w")
+        filename=filename.replace(".","_")
+        f.write('module ' + filename + '(\n')
+        string=''
+        for signal in self.frames.getSignals(self.chain).keys():
+            string+='input '
+            msb, lsb, lenmsb, lenlsb = self.getTermWidths(signal)
+            if msb: 
+                v_msb = str(self.optimizer.optimize(msb).value)
+            if lsb: 
+                v_lsb = str(self.optimizer.optimize(lsb).value)
+                if v_msb is not v_lsb:
+                    string+='[' + v_msb + ':' + v_lsb + '] '
+            string+=signal.getSignalName()
+            if lenmsb: 
+                v_lmsb = str(self.optimizer.optimize(lenmsb).value)
+            if lenlsb: 
+                v_llsb = str(self.optimizer.optimize(lenlsb).value)
+                if v_lmsb is not v_llsb:
+                    string+=' [' + v_lmsb + ':' + v_llsb + '] '
+            string+=',\n'
+        string=string[:-2]
+        f.write(string)
+        f.write(');')
+
         for const in self.frames.getConsts(self.chain).keys():
             self.buf.write(str(const) + ': ' + '\n')
             for bind in self.binddict[const]:
@@ -56,7 +83,8 @@ class PropWriter(NodeVisitor):
             for bind in self.binddict[scope]:
                 for name, node, cond in bind.getValues():
                     self.buf.write(name + ' : ' + cond + '\n')
-                
+        f.write('\nendmodule')
+        f.close()
         self.generic_visit(node)
 
     def visit_InstanceList(self, node):
@@ -93,3 +121,8 @@ class PropWriter(NodeVisitor):
 
     def _visit_Instance_primitive(self, node, arrayindex=None):
         pass
+    
+    def getTermWidths(self, name):
+        term = self.dataflow.getTerm(name)
+        return term.msb, term.lsb, term.lenmsb, term.lenlsb
+
