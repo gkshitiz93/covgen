@@ -6,42 +6,47 @@ import re
 
 class SVWriter(object):
     def __init__(self):
-        self.ante=[]
-        self.conseq=[]
-        self.clock=None
-        self.clockedge=None
+        self.ante=None
+        self.conseq=None
+        self.anteclock=None
+        self.anteclockedge=None
+        self.conseqclock=None
+        self.conseqclockedge=None
         self.buf=sys.stdout
         self.delay=1
 
-    def setFile(buf=sys.stdout):
+    def setFile(self, buf=sys.stdout):
         self.buf=buf
 
-    def newProp(self, antecedent=[], consequent=[], clk='', edge='', delay=1):
-        del self.ante[:]
-        del self.conseq[:]
-        self.ante.extend(antecedent)
-        self.conseq.extend(consequent)
-        if clk is not '':
-            self.clock=clk
-        if edge is not '':
-            self.clockedge=edge
-        self.delay=delay
+    def setAnteClock(self, clk, edge):
+        self.anteclock=clk
+        self.anteclockedge=edge
+
+    def setConseqClock(self, clk, edge):
+        self.conseqclock=clk
+        self.conseqclockedge=edge
     
-    def setClock(self, clk, edge):
-        self.clock=clk
-        self.clockedge=edge
+    def setAnte(self, antecedent):
+        self.ante = antecedent
 
-    def addAnte(self, antecedent):
-        self.ante.extend(antecedent)
-
-    def addConseq(self, consequent):
-        self.conseq.extend(consequent)
+    def setConseq(self, consequent):
+        self.conseq = consequent
 
     def setDelay(self, delay):
         self.delay=delay
 
     def write(self):
-        self.buf.write('cover property:')
-        ##TODO##
-        self.buf.write('\n')
+        self.buf.write('cover property: (')
+        if self.anteclock:
+            if self.anteclockedge:
+                self.buf.write("(@" + self.anteclockedge + " " + self.anteclock + ") ")
+        self.buf.write(self.ante)
+        if(self.conseq):
+            self.buf.write("->##" + str(self.delay) + " ")
+            if self.conseqclock:
+                if self.conseqclockedge:
+                    self.buf.write("(@" + self.conseqclockedge + " " + self.anteclock + ") ")
+
+            self.buf.write(self.conseq)
+        self.buf.write(")\n\n")
 

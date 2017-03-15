@@ -6,7 +6,7 @@ test: clean
 	@python ../src/main.py -t top ../rtl/test.v
 
 dataflow: clean
-	@python ../src/example_dataflow_analyzer.py -t top ../rtl/test.v
+	@python ../src/example_dataflow_analyzer.py -t top ../rtl/wishbone.v
 
 ex_parser:
 	@python ../src/example_parser.py ../rtl/amber25/a25_wishbone.v
