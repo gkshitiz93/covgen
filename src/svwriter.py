@@ -36,17 +36,17 @@ class SVWriter(object):
 
     def write(self):
         for ante in self.ante:
-            self.buf.write('cover property: (')
+            self.buf.write('cover property(')
             cond, clkstr = ante
             self.buf.write("@(" + clkstr + ") ")
             self.buf.write(cond)
             if(self.conseq):
-                self.buf.write("->##" + str(self.delay) + " ")
+                self.buf.write("|->##" + str(self.delay) + " ")
                 if self.conseqclock:
                     if self.conseqclock == clkstr:
                         pass
                     else:
                         self.buf.write("@(" + self.conseqclock + ") ")
                 self.buf.write(self.conseq)
-            self.buf.write(")\n\n")
+            self.buf.write(");\n\n")
 
