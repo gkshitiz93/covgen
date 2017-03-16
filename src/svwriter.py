@@ -6,12 +6,9 @@ import re
 
 class SVWriter(object):
     def __init__(self):
-        self.ante=None
+        self.ante=[]
         self.conseq=None
-        self.anteclock=None
-        self.anteclockedge=None
         self.conseqclock=None
-        self.conseqclockedge=None
         self.buf=sys.stdout
         self.delay=1
 
@@ -22,12 +19,14 @@ class SVWriter(object):
         self.anteclock=clk
         self.anteclockedge=edge
 
-    def setConseqClock(self, clk, edge):
-        self.conseqclock=clk
-        self.conseqclockedge=edge
+    def setConseqClock(self, clkstr):
+        self.conseqclock=clkstr
     
-    def setAnte(self, antecedent):
-        self.ante = antecedent
+    def clearAnte(self):
+        del self.ante[:]
+
+    def addAnte(self, anteinfo):
+        self.ante.extend(anteinfo)
 
     def setConseq(self, consequent):
         self.conseq = consequent
@@ -36,17 +35,18 @@ class SVWriter(object):
         self.delay=delay
 
     def write(self):
-        self.buf.write('cover property: (')
-        if self.anteclock:
-            if self.anteclockedge:
-                self.buf.write("(@" + self.anteclockedge + " " + self.anteclock + ") ")
-        self.buf.write(self.ante)
-        if(self.conseq):
-            self.buf.write("->##" + str(self.delay) + " ")
-            if self.conseqclock:
-                if self.conseqclockedge:
-                    self.buf.write("(@" + self.conseqclockedge + " " + self.anteclock + ") ")
-
-            self.buf.write(self.conseq)
-        self.buf.write(")\n\n")
+        for ante in self.ante:
+            self.buf.write('cover property: (')
+            cond, clkstr = ante
+            self.buf.write("@(" + clkstr + ") ")
+            self.buf.write(cond)
+            if(self.conseq):
+                self.buf.write("->##" + str(self.delay) + " ")
+                if self.conseqclock:
+                    if self.conseqclock == clkstr:
+                        pass
+                    else:
+                        self.buf.write("@(" + self.conseqclock + ") ")
+                self.buf.write(self.conseq)
+            self.buf.write(")\n\n")
 

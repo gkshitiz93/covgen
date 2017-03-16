@@ -30,7 +30,6 @@ class PropWriter(NodeVisitor):
         self.moduleinfotable.setCurrent(top)
         self.chain = ScopeChain()
         self.chain += ScopeLabel(top, 'module')
-        self.optimizer = VerilogOptimizer({}, {})
         self.buf=buf
         self.cond=[]
 
@@ -70,42 +69,42 @@ class PropWriter(NodeVisitor):
             string+=',\n'
         string=string[:-2]
         f.write(string)
-        f.write(');')
+        f.write(');\n\n')
 
         self.writer.setFile(f)
 
-        #for const in self.frames.getConsts(self.chain).keys():
-        #    self.buf.write(str(const) + ': ' + '\n')
-        #    for bind in self.binddict[const]:
-        #        for name, node, cond in bind.getValues():
-        #            self.buf.write(name + ' : ' + cond + '\n')
-        #            
+        for const in self.frames.getConsts(self.chain).keys():
+            for bind in self.binddict[const]:
+                pass
+                #self.optimizer.setTerm(const)
+                #self.optimizer.setConstant(const, bind.tree.value)
+                    
         for reg in self.moduleinfotable.getInteresting():
             valuetable={}
             scope=self.chain + ScopeLabel(reg,'signal')
-            #self.buf.write(str(scope) + ': ' + '\n')
             for bind in self.binddict[scope]:
-                for value, node, cond in self.getValues(bind):
-                    if isinstance(value, ScopeChain):
-                        if value in self.frames.getConsts(self.chain).keys():
-                            key=self.binddict[value][0].getValue()
-                        else:
-                            key=value
-                        
-                        if key in valuetable.keys():
-                            valuetable[key].append((value, node, cond))
-                        else:
-                            valuetable[key]=[(value, node, cond)]
+                clkstr=""
+                if(bind.isClockEdge()):
+                    clkstr=bind.getClockEdge()
+                    clkstr=clkstr+"("+ bind.getClockName().getSignalName() + ")"
+                else:
+                    clkstr=bind.getClockName().getSignalName()
+
+                for value, cond in self.getValues(bind):
+                    key=value
+                    #print(key + ":" + cond)
+                    if key in valuetable.keys():
+                        valuetable[key].append((cond, clkstr))
+                    else:
+                        valuetable[key]=[(cond, clkstr)]
 
                     self.buf.write(str(value) + ' : ' + cond + '\n')
 
-            #Have the valuetable with "value" -> "other params"
             for always in self.moduleinfotable.getAlways().values():
                 if reg in always.getControl():
                     for data in always.getState():
                         datascope=self.chain+ScopeLabel(data,'signal')
                         for bind in self.binddict[datascope]:
-                            self.writer.setAnte("Some Condition")
                             self.writeProps(datascope, scope, bind, valuetable)
         
         f.write('\nendmodule')
@@ -153,36 +152,43 @@ class PropWriter(NodeVisitor):
 
     def getValues(self, bind):
         ret=[]
-        ret=self.parseTree(bind.tree, ret)
+        ret=self.parseTree(self.optimizer.optimize(bind.tree), ret)
         return ret 
 
     def parseTree(self, tree, oldlist = []):
         ret = oldlist
-        if(isinstance(tree, DFTerminal)):
-            ret.append((tree.name, tree, self._getCond()))
-        if(isinstance(tree, DFIntConst)):
-            ret.append((tree.eval(), tree, self._getCond()))
-        if(isinstance(tree, DFFloatConst)):
-            ret.append((tree.eval(), tree, self._getCond()))
-        if(isinstance(tree, DFStringConst)):
-            ret.append((tree.eval(), tree, self._getCond()))
         if(isinstance(tree, DFBranch)):
+            string=self.getstr(tree.condnode)
             if(tree.truenode): 
-                self._addTrue(tree.condnode.tostr())
+                self._addTrue(string)
                 self.parseTree(tree.truenode, ret)
                 self._popCond()
             if(tree.falsenode): 
-                self._addFalse(tree.condnode.tostr())
+                self._addFalse(string)
                 self.parseTree(tree.falsenode, ret)
                 self._popCond()
+
+        if(isinstance(tree, DFTerminal)):
+            ret.append((str(tree.getTermName()), self._getCond()))
+        if self.isDFeval(tree):
+            ret.append((str(tree.value), self._getCond()))
+        if(isinstance(tree, DFIntConst)):
+            ret.append((str(tree.eval()), self._getCond()))
+        if(isinstance(tree, DFFloatConst)):
+            ret.append((str(tree.eval()), self._getCond()))
+        if(isinstance(tree, DFStringConst)):
+            ret.append((str(tree.eval()), self._getCond()))
+        
         if(isinstance(tree, DFOperator)):
-            ret.append((tree, tree, self._getCond()))
+            ret.append((self.getstr(tree), self._getCond()))
+        
         if(isinstance(tree, DFPartselect)):
-            ret.append((tree, tree, self._getCond()))
-        if(isinstance(tree, DFPointer)):
-            ret.append(("What is a pointer", tree, self_getCond()))
+            ret.append((self.getstr(tree), self._getCond()))
         if(isinstance(tree, DFConcat)):
-            ret.append((tree, tree, self._getCond()))
+            ret.append((self.getstr(tree), self._getCond()))
+        
+        if(isinstance(tree, DFPointer)):
+            ret.append(("What is a pointer", self_getCond()))
         return ret
     
     def _addTrue(self, condition):
@@ -232,6 +238,14 @@ class PropWriter(NodeVisitor):
 
     def writeProps(self, data, state, bind, valuetable):
         tree=self.optimizer.optimize(bind.tree)
+        self.writer.clearAnte()
+        clkstr=""
+        if(bind.isClockEdge()):
+            clkstr=bind.getClockEdge()
+            clkstr=clkstr+"("+bind.getClockName().getSignalName() + ")"
+        else:
+            clkstr=bind.getClockName().getSignalName()
+        self.writer.setConseqClock(clkstr)
         self._parseandwrite(data, state, tree, valuetable)
 
     def _parseandwrite(self, data, state, tree, valuetable, cond=False, found=False): 
@@ -251,11 +265,21 @@ class PropWriter(NodeVisitor):
             if self.isDFOp(tree):
                 valuelist=[]
                 for node in tree.nextnodes:
-                    valuelist.append(self._parseandwrite(data, state, node, valuetable, cond, found))
+                    valuelist.append(self._parseandwrite(data, state, node, valuetable, cond, False))
                 
                 if tree.operator == 'Eq' or tree.operator == 'Eql':
                     string="(" + valuelist[0][0] + "==" + valuelist[1][0] + ")"
+                    if valuelist[0][1]:
+                        #print(valuelist[0][0] + ":" + valuelist[1][0])
+                        if valuelist[0][0]==state.getSignalName():
+                            if valuelist[1][0] in valuetable.keys():
+                                self.writer.addAnte(valuetable[valuelist[1][0]])
+                    if valuelist[1][1]:
+                        if valuelist[1][0]==state.getSignalName():
+                            if valuelist[0][0] in valuetable.keys():
+                                self.writer.addAnte(valuetable[valuelist[0][0]])
                     return (string, found or valuelist[0][1] or valuelist[1][1])
+
                 if tree.operator == 'NotEq' or tree.operator == 'NotEql':
                     string="(" + valuelist[0][0] + "!=" + valuelist[1][0] + ")"
                     return (string, found or valuelist[0][1] or valuelist[1][1])
@@ -272,7 +296,7 @@ class PropWriter(NodeVisitor):
                 if tree.operator == 'GreaterEq':
                     string="(" + valuelist[0][0] + ">=" + valuelist[1][0] + ")"
                     return (string, found or valuelist[0][1] or valuelist[1][1])
-
+                
                 if tree.operator == 'Land':
                     string="(" + valuelist[0][0] + "&&" + valuelist[1][0] + ")"
                     return (string, found or valuelist[0][1] or valuelist[1][1])
@@ -314,7 +338,6 @@ class PropWriter(NodeVisitor):
                 if tree.operator == 'Uxnor':
                     string="(~(^ " + valuelist[0][0] + "))"
                     return (string, found or valuelist[0][1])    
-                
                 if tree.operator == 'Power':
                     string="(" + valuelist[0][0] + "**" +valuelist[1][0] + ")"
                     return (string, found or valuelist[0][1] or valuelist[1][1])
@@ -391,4 +414,142 @@ class PropWriter(NodeVisitor):
                 self._addTrue(data.getSignalName() + "==" + val)
                 self.writer.setConseq(self._getCond())
                 self.writer.write()
+                self.writer.clearAnte()
                 self._popCond()
+
+    def getstr(self, tree):
+        if self.isDFterm(tree):
+            return str(tree.getTermName())
+
+        if self.isDFeval(tree):
+            return str(tree.value)
+
+        if self.isDFConst(tree):
+            return str(tree.eval())
+        
+        if self.isDFeval(tree):
+            return str(tree.value)
+        
+        if self.isDFOp(tree):
+            valuelist=[]
+            for node in tree.nextnodes:
+                valuelist.append(self.getstr(node))
+            
+            if tree.operator == 'Eq' or tree.operator == 'Eql':
+                string="(" + valuelist[0] + "==" + valuelist[1] + ")"
+                return string
+            if tree.operator == 'NotEq' or tree.operator == 'NotEql':
+                string="(" + valuelist[0] + "!=" + valuelist[1] + ")"
+                return string
+
+            if tree.operator == 'LessThan':
+                string="(" + valuelist[0] + "<" + valuelist[1] + ")"
+                return string
+            if tree.operator == 'GreaterThan':
+                string="(" + valuelist[0] + ">" + valuelist[1] + ")"
+                return string
+            if tree.operator == 'LessEq':
+                string="(" + valuelist[0] + "<=" + valuelist[1] + ")"
+                return string
+            if tree.operator == 'GreaterEq':
+                string="(" + valuelist[0] + ">=" + valuelist[1] + ")"
+                return string
+            if tree.operator == 'Land':
+                string="(" + valuelist[0] + "&&" + valuelist[1] + ")"
+                return string
+            if tree.operator == 'Lor':
+                string="(" + valuelist[0] + "||" + valuelist[1] + ")"
+                return string
+            if tree.operator == 'Uminus':
+                string = "-1*" + valuelist[0]
+                return string
+            if tree.operator == 'Ulnot':
+                if valuelist[0] == "0" or valuelist[0] == "False":
+                    return "1"
+                if valuelist[0] == "1" or valuelist[0] == "True":
+                    return "0"
+                string="(!(" + valuelist[0] + "))"
+                return string 
+            if tree.operator == 'Unot':
+                if valuelist[0] == "0" or valuelist[0] == "False":
+                    return "1"
+                if valuelist[0]== "1" or valuelist[0] == "True":
+                    return "0"
+                string="(~(" + valuelist[0] + "))"
+                return string
+            if tree.operator == 'Uand': 
+                string="(& " + valuelist[0] + ")"
+                return string  
+            if tree.operator == 'Unand': 
+                string="(~(& " + valuelist[0] + "))"
+                return string  
+            if tree.operator == 'Uor': 
+                string="(| " + valuelist[0] + ")"
+                return string  
+            if tree.operator == 'Unor': 
+                string="(~(| " + valuelist[0] + "))"
+                return string  
+            if tree.operator == 'Uxor':
+                string="(^ " + valuelist[0] + ")"
+                return string  
+            if tree.operator == 'Uxnor':
+                string="(~(^ " + valuelist[0] + "))"
+                return string  
+            if tree.operator == 'Power':
+                string="(" + valuelist[0] + "**" +valuelist[1] + ")"
+                return string  
+            if tree.operator == 'Times':
+                string="(" + valuelist[0] + "*" +valuelist[1] + ")"
+                return string  
+            if tree.operator == 'Divide':
+                string="(" + valuelist[0] + "/" +valuelist[1] + ")"
+                return string  
+            if tree.operator == 'Mod':
+                string="(" + valuelist[0] + "%" +valuelist[1] + ")"
+                return string  
+            if tree.operator == 'Plus':
+                string="(" + valuelist[0] + "+" +valuelist[1] + ")"
+                return string  
+            if tree.operator == 'Minus':
+                string="(" + valuelist[0] + "-" +valuelist[1] + ")"
+                return string  
+            if tree.operator == 'Sll':
+                string="(" + valuelist[0] + "<<" +valuelist[1] + ")"
+                return string  
+            if tree.operator == 'Srl':
+                string="(" + valuelist[0] + ">>" +valuelist[1] + ")"
+                return string  
+            if tree.operator == 'Sra':
+                string="(" + valuelist[0] + ">>" +valuelist[1] + ")"
+                return string  
+            if tree.operator == 'And':
+                string="(" + valuelist[0] + "&" +valuelist[1] + ")"
+                return string  
+            if tree.operator == 'Xor':
+                string="(" + valuelist[0] + "^" +valuelist[1] + ")"
+                return string  
+            if tree.operator == 'Xnor':
+                string="(~(" + valuelist[0] + "^" +valuelist[1] + "))"
+                return string  
+            if tree.operator == 'Or':
+                string="(" + valuelist[0] + "|" +valuelist[1] + ")"
+                return string  
+            return None
+        
+        if self.isDFparts(tree):
+            if isinstance(tree, DFPartSelect):
+                msb=tree.msb.value
+                lsb=tree.lsb.value
+                string = self.getstr(tree.var)
+                string+=string+"["+str(msb)+":"+str(lsb)+"]"
+                return string
+            
+            if isinstance(tree, DFConcat):
+                string="{"
+                newfound = False
+                for nodes in tree.nextnodes:
+                    nodestr = self.getstr(node)
+                    string += nodestr + ','
+                string=string[:-1]
+                string+="}"
+                return string
