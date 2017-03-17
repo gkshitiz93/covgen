@@ -25,7 +25,7 @@ class PropWriter(NodeVisitor):
         self.frames = frames
         self.dataflow = dataflow
         self.binddict = self.dataflow.getBinddict()
-        self.optimizer = VerilogOptimizer({}, {})
+        self.optimizer = VerilogOptimizer(dataflow.getTerms())
         self.writer = SVWriter()
         self.moduleinfotable.setCurrent(top)
         self.chain = ScopeChain()
@@ -45,6 +45,10 @@ class PropWriter(NodeVisitor):
         os.chdir(oldpath)
 
     def visit_ModuleDef(self, node):
+        for const in self.frames.getConsts(self.chain).keys():
+            for bind in self.binddict[const]:
+                self.optimizer.setConstant(const, DFEvalValue(bind.tree.eval()))
+
         filename=str(self.chain)+'_test'
         f=open(filename,"w")
         filename=filename.replace(".","_")
@@ -72,12 +76,6 @@ class PropWriter(NodeVisitor):
         f.write(');\n\n')
 
         self.writer.setFile(f)
-
-        for const in self.frames.getConsts(self.chain).keys():
-            for bind in self.binddict[const]:
-                pass
-                #self.optimizer.setTerm(const)
-                #self.optimizer.setConstant(const, bind.tree.value)
                     
         for reg in self.moduleinfotable.getInteresting():
             valuetable={}
