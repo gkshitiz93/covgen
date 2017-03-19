@@ -82,22 +82,18 @@ class PropWriter(NodeVisitor):
             scope=self.chain + ScopeLabel(reg,'signal')
             for bind in self.binddict[scope]:
                 clkstr=""
-                if bind.isCombination():
-                    print("Combinational bind" + str(scope))
+                if(bind.isClockEdge()):
+                    clkstr=bind.getClockEdge()
+                    clkstr=clkstr+"("+ bind.getClockName().getSignalName() + ")"
                 else:
-                    if(bind.isClockEdge()):
-                        clkstr=bind.getClockEdge()
-                        clkstr=clkstr+"("+ bind.getClockName().getSignalName() + ")"
-                    else:
-                        clkstr=bind.getClockName().getSignalName()
+                    clkstr=bind.getClockName().getSignalName()
 
-                for value, cond in self.getValues(bind):
-                    key=value
+                for value, cond in self.getValues(bind, scope):
                     #print(key + ":" + cond)
-                    if key in valuetable.keys():
-                        valuetable[key].append((cond, clkstr))
+                    if value in valuetable.keys():
+                        valuetable[value].append((cond, clkstr))
                     else:
-                        valuetable[key]=[(cond, clkstr)]
+                        valuetable[value]=[(cond, clkstr)]
 
                     self.buf.write(str(value) + ' : ' + cond + '\n')
 
@@ -109,6 +105,9 @@ class PropWriter(NodeVisitor):
                             self.writeProps(datascope, scope, bind, valuetable)
         
         f.write('\nendmodule')
+        f.write("\n\n\n\n")
+        f.write("bind " + self.moduleinfotable.getCurrent() + " : ")
+        f.write(str(self.chain) + " " + filename + " " + filename + "_props(.*)\n")
         f.close()
         self.generic_visit(node)
 
@@ -151,44 +150,51 @@ class PropWriter(NodeVisitor):
         term = self.dataflow.getTerm(name)
         return term.msb, term.lsb, term.lenmsb, term.lenlsb
 
-    def getValues(self, bind):
+    def getValues(self, bind, name):
         ret=[]
-        ret=self.parseTree(self.optimizer.optimize(bind.tree), ret)
+        ret=self.parseTree(self.optimizer.optimize(bind.tree), name, ret)
         return ret 
 
-    def parseTree(self, tree, oldlist = []):
+    def parseTree(self, tree, name, oldlist = []):
         ret = oldlist
-        if(isinstance(tree, DFBranch)):
+        if self.isDFBranch(tree):
             string=self.getstr(tree.condnode)
             if(tree.truenode): 
                 self._addTrue(string)
-                self.parseTree(tree.truenode, ret)
+                self.parseTree(tree.truenode, name, ret)
                 self._popCond()
             if(tree.falsenode): 
                 self._addFalse(string)
-                self.parseTree(tree.falsenode, ret)
+                self.parseTree(tree.falsenode, name, ret)
                 self._popCond()
 
-        if(isinstance(tree, DFTerminal)):
-            ret.append((str(tree.getTermName()), self._getCond()))
+        if self.isDFterm(tree):
+            if "Rename" in self.dataflow.getTerm(tree.name).termtype:
+                #print("Reached rename" + str(tree.getTermName()))
+                for bind in self.binddict[tree.name]:
+                        ret.extend(self.getValues(bind, name))
+            else:
+                ret.append((str(tree.getTermName()), self._getCond()))
+                #print("Reached " + str(tree.getTermName()))
+                if name.getSignalName() in self.moduleinfotable.getAlwaysfromState(tree.getTermName()).getControl():
+                    for bind in self.binddict[tree.name]:
+                        if bind.isCombination():
+                            ret.extend(self.getValues(bind, name))
+
         if self.isDFeval(tree):
             ret.append((str(tree.value), self._getCond()))
-        if(isinstance(tree, DFIntConst)):
-            ret.append((str(tree.eval()), self._getCond()))
-        if(isinstance(tree, DFFloatConst)):
-            ret.append((str(tree.eval()), self._getCond()))
-        if(isinstance(tree, DFStringConst)):
+        
+        if self.isDFConst(tree):
             ret.append((str(tree.eval()), self._getCond()))
         
-        if(isinstance(tree, DFOperator)):
+        if self.isDFOp(tree):
             ret.append((self.getstr(tree), self._getCond()))
         
-        if(isinstance(tree, DFPartselect)):
-            ret.append((self.getstr(tree), self._getCond()))
-        if(isinstance(tree, DFConcat)):
+        if self.isDFparts(tree):
             ret.append((self.getstr(tree), self._getCond()))
         
         if(isinstance(tree, DFPointer)):
+            print("What is a pointer!!!")
             ret.append(("What is a pointer", self_getCond()))
         return ret
     
@@ -242,7 +248,8 @@ class PropWriter(NodeVisitor):
         self.writer.clearAnte()
         clkstr=""
         if(bind.isCombination()):
-            print("Combinational Bind: " + str(data))
+            #print("Combinational Bind: " + str(data))
+            pass
         else:
             if(bind.isClockEdge()):
                 clkstr=bind.getClockEdge()
@@ -258,7 +265,11 @@ class PropWriter(NodeVisitor):
                 if tree.name == state:
                     return (str(tree.getTermName()), True)
                 else:
-                    return (str(tree.getTermName()), False)
+                    if "Rename" in self.dataflow.getTerm(tree.name).termtype:
+                        for bind in self.binddict[tree.name]:
+                            return(self.getstr(bind.tree), False)
+                    else:
+                        return (str(tree.getTermName()), False)
 
             if self.isDFeval(tree):
                 return (str(tree.value), False)
@@ -388,7 +399,9 @@ class PropWriter(NodeVisitor):
                     msb=tree.msb.value
                     lsb=tree.lsb.value
                     string, newfound = self._parseandwrite(data, state, tree.var, valuetable, cond, found)
-                    string+=string+"["+str(msb)+":"+str(lsb)+"]"
+                    if msb==lsb:
+                        string+="["+str(msb)+"]"
+                    string+="["+str(msb)+":"+str(lsb)+"]"
                     return (string, newfound)
                 
                 if isinstance(tree, DFConcat):
