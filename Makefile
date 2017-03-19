@@ -11,6 +11,10 @@ decode:
 	@clear
 	$(MAKE) -C bin decode
 
+simple:
+	@clear
+	$(MAKE) -C bin simple
+
 dataflow:
 	$(MAKE) -C bin dataflow
 

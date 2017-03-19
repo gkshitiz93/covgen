@@ -5,6 +5,12 @@ all:
 test:
 	$(MAKE) -C ../ test
 
+decode:
+	$(MAKE) -C ../ decode
+
+simple:
+	$(MAKE) -C ../ simple
+
 dataflow:
 	$(MAKE) -C ../ dataflow
 

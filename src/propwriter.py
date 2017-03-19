@@ -82,11 +82,14 @@ class PropWriter(NodeVisitor):
             scope=self.chain + ScopeLabel(reg,'signal')
             for bind in self.binddict[scope]:
                 clkstr=""
-                if(bind.isClockEdge()):
-                    clkstr=bind.getClockEdge()
-                    clkstr=clkstr+"("+ bind.getClockName().getSignalName() + ")"
+                if bind.isCombination():
+                    print("Combinational bind" + str(scope))
                 else:
-                    clkstr=bind.getClockName().getSignalName()
+                    if(bind.isClockEdge()):
+                        clkstr=bind.getClockEdge()
+                        clkstr=clkstr+"("+ bind.getClockName().getSignalName() + ")"
+                    else:
+                        clkstr=bind.getClockName().getSignalName()
 
                 for value, cond in self.getValues(bind):
                     key=value
@@ -238,11 +241,14 @@ class PropWriter(NodeVisitor):
         tree=self.optimizer.optimize(bind.tree)
         self.writer.clearAnte()
         clkstr=""
-        if(bind.isClockEdge()):
-            clkstr=bind.getClockEdge()
-            clkstr=clkstr+"("+bind.getClockName().getSignalName() + ")"
+        if(bind.isCombination()):
+            print("Combinational Bind: " + str(data))
         else:
-            clkstr=bind.getClockName().getSignalName()
+            if(bind.isClockEdge()):
+                clkstr=bind.getClockEdge()
+                clkstr=clkstr+"("+bind.getClockName().getSignalName() + ")"
+            else:
+                clkstr=bind.getClockName().getSignalName()
         self.writer.setConseqClock(clkstr)
         self._parseandwrite(data, state, tree, valuetable)
 
@@ -378,7 +384,7 @@ class PropWriter(NodeVisitor):
                 return None
             
             if self.isDFparts(tree):
-                if isinstance(tree, DFPartSelect):
+                if isinstance(tree, DFPartselect):
                     msb=tree.msb.value
                     lsb=tree.lsb.value
                     string, newfound = self._parseandwrite(data, state, tree.var, valuetable, cond, found)
@@ -535,7 +541,7 @@ class PropWriter(NodeVisitor):
             return None
         
         if self.isDFparts(tree):
-            if isinstance(tree, DFPartSelect):
+            if isinstance(tree, DFPartselect):
                 msb=tree.msb.value
                 lsb=tree.lsb.value
                 string = self.getstr(tree.var)
