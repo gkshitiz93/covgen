@@ -89,7 +89,7 @@ class PropWriter(NodeVisitor):
                     clkstr=bind.getClockName().getSignalName()
 
                 for value, cond in self.getValues(bind, scope):
-                    #print(key + ":" + cond)
+                    #print(value + ":" + cond)
                     if value in valuetable.keys():
                         valuetable[value].append((cond, clkstr))
                     else:
@@ -176,10 +176,12 @@ class PropWriter(NodeVisitor):
             else:
                 ret.append((str(tree.getTermName()), self._getCond()))
                 #print("Reached " + str(tree.getTermName()))
-                if name.getSignalName() in self.moduleinfotable.getAlwaysfromState(tree.getTermName()).getControl():
-                    for bind in self.binddict[tree.name]:
-                        if bind.isCombination():
-                            ret.extend(self.getValues(bind, name))
+                #always=self.moduleinfotable.getAlwaysfromState(tree.getTermName())
+                #if always:
+                    #if name.getSignalName() in always.getControl():
+                for bind in self.binddict[tree.name]:
+                    if bind.isCombination():
+                        ret.extend(self.getValues(bind, name))
 
         if self.isDFeval(tree):
             ret.append((str(tree.value), self._getCond()))
