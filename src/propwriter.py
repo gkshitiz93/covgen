@@ -246,7 +246,6 @@ class PropWriter(NodeVisitor):
 
 
     def writeProps(self, data, state, bind, valuetable):
-        tree=self.optimizer.optimize(bind.tree)
         self.writer.clearAnte()
         clkstr=""
         if(bind.isCombination()):
@@ -259,7 +258,7 @@ class PropWriter(NodeVisitor):
             else:
                 clkstr=bind.getClockName().getSignalName()
         self.writer.setConseqClock(clkstr)
-        self._parseandwrite(data, state, tree, valuetable)
+        self._parseandwrite(data, state, self.optimizer.optimize(bind.tree), valuetable)
 
     def _parseandwrite(self, data, state, tree, valuetable, cond=False, found=False): 
         if cond:
@@ -269,7 +268,7 @@ class PropWriter(NodeVisitor):
                 else:
                     if "Rename" in self.dataflow.getTerm(tree.name).termtype:
                         for bind in self.binddict[tree.name]:
-                            return(self.getstr(bind.tree), False)
+                            return(self.getstr(self.optimizer.optimize(bind.tree)), False)
                     else:
                         return (str(tree.getTermName()), False)
 
@@ -403,7 +402,8 @@ class PropWriter(NodeVisitor):
                     string, newfound = self._parseandwrite(data, state, tree.var, valuetable, cond, found)
                     if msb==lsb:
                         string+="["+str(msb)+"]"
-                    string+="["+str(msb)+":"+str(lsb)+"]"
+                    else:
+                        string+="["+str(msb)+":"+str(lsb)+"]"
                     return (string, newfound)
                 
                 if isinstance(tree, DFConcat):
