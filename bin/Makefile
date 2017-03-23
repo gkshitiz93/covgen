@@ -1,6 +1,6 @@
 #Makefile for execution
 covgen: clean
-	@python ../src/main.py -t top ../rtl/wishbone.v
+	@python ../src/main.py -t a25_wishbone ../rtl/wishbone.v
 
 test: clean
 	@python ../src/main.py -t top ../rtl/test.v

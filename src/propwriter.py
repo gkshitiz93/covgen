@@ -50,8 +50,8 @@ class PropWriter(NodeVisitor):
                 self.optimizer.setConstant(const, DFEvalValue(bind.tree.eval()))
 
         filename=str(self.chain)+'_test'
-        f=open(filename,"w")
         filename=filename.replace(".","_")
+        f=open(filename + '.sv',"w")
         f.write('module ' + filename + '(\n')
         string=''
         for signal in self.frames.getSignals(self.chain).keys():
@@ -106,8 +106,15 @@ class PropWriter(NodeVisitor):
         
         f.write('\nendmodule')
         f.write("\n\n\n\n")
-        f.write("bind " + self.moduleinfotable.getCurrent() + " : ")
-        f.write(str(self.chain) + " " + filename + " " + filename + "_props(.*)\n")
+        f.write("module " + filename + "_wrapper;\n")
+        if len(self.chain)==1:
+            #TOP module
+            f.write("bind ")
+            f.write(str(self.chain) + " " + filename + " " + filename + "_props(.*);\n")
+        else:
+            f.write("bind " + self.moduleinfotable.getCurrent() + " : ")
+            f.write(str(self.chain) + " " + filename + " " + filename + "_props(.*);\n")
+        f.write("\n\nendmodule")
         f.close()
         self.generic_visit(node)
 
@@ -246,7 +253,7 @@ class PropWriter(NodeVisitor):
 
 
     def writeProps(self, data, state, bind, valuetable):
-        self.writer.clearAnte()
+        self.writer.newSet(data, state)
         clkstr=""
         if(bind.isCombination()):
             #print("Combinational Bind: " + str(data))
@@ -289,16 +296,40 @@ class PropWriter(NodeVisitor):
                         #print(valuelist[0][0] + ":" + valuelist[1][0])
                         if valuelist[0][0]==state.getSignalName():
                             if valuelist[1][0] in valuetable.keys():
-                                self.writer.addAnte(valuetable[valuelist[1][0]])
+                                self.writer.addAntetemp(valuetable[valuelist[1][0]])
                     if valuelist[1][1]:
                         if valuelist[1][0]==state.getSignalName():
                             if valuelist[0][0] in valuetable.keys():
-                                self.writer.addAnte(valuetable[valuelist[0][0]])
+                                self.writer.addAntetemp(valuetable[valuelist[0][0]])
                     return (string, found or valuelist[0][1] or valuelist[1][1])
 
                 if tree.operator == 'NotEq' or tree.operator == 'NotEql':
                     string="(" + valuelist[0][0] + "!=" + valuelist[1][0] + ")"
                     return (string, found or valuelist[0][1] or valuelist[1][1])
+                
+                if tree.operator == 'Ulnot':
+                    if valuelist[0][0] == "0" or valuelist[0][0] == "False":
+                        return ("1", found or valuelist[0][1])
+                    if valuelist[0][0] == "1" or valuelist[0][0] == "True":
+                        return ("0", found or valuelist[0][1])
+                    string="(!(" + valuelist[0][0] + "))"
+                    
+                    if valuelist[0][1]:#Expression contains state
+                        self.write.clearAntetemp()
+
+                    return (string, found or valuelist[0][1])
+                if tree.operator == 'Unot':
+                    if valuelist[0][0] == "0" or valuelist[0][0] == "False":
+                        return ("1", found or valuelist[0][1])
+                    if valuelist[0][0] == "1" or valuelist[0][0] == "True":
+                        return ("0", found or valuelist[0][1])
+                    string="(~(" + valuelist[0][0] + "))"
+                    
+                    if valuelist[0][1]:#Expression contains state
+                        self.write.clearAntetemp()
+                    
+                    return (string, found or valuelist[0][1])
+                
 
                 if tree.operator == 'LessThan':
                     string="(" + valuelist[0][0] + "<" + valuelist[1][0] + ")"
@@ -322,20 +353,7 @@ class PropWriter(NodeVisitor):
                 if tree.operator == 'Uminus':
                     string = "-1*" + valuelist[0][0]
                     return (string, found or valuelist[0][1])
-                if tree.operator == 'Ulnot':
-                    if valuelist[0][0] == "0" or valuelist[0][0] == "False":
-                        return ("1", found or valuelist[0][1])
-                    if valuelist[0][0] == "1" or valuelist[0][0] == "True":
-                        return ("0", found or valuelist[0][1])
-                    string="(!(" + valuelist[0][0] + "))"
-                    return (string, found or valuelist[0][1])    
-                if tree.operator == 'Unot':
-                    if valuelist[0][0] == "0" or valuelist[0][0] == "False":
-                        return ("1", found or valuelist[0][1])
-                    if valuelist[0][0] == "1" or valuelist[0][0] == "True":
-                        return ("0", found or valuelist[0][1])
-                    string="(~(" + valuelist[0][0] + "))"
-                    return (string, found or valuelist[0][1])
+
                 if tree.operator == 'Uand': 
                     string="(& " + valuelist[0][0] + ")"
                     return (string, found or valuelist[0][1])    
@@ -419,6 +437,7 @@ class PropWriter(NodeVisitor):
         
         if self.isDFBranch(tree):
             string, newfound = self._parseandwrite(data, state, tree.condnode, valuetable, True, found)
+            self.writer.commitAntetemp()
             if(tree.truenode): 
                 self._addTrue(string)
                 self._parseandwrite(data, state, tree.truenode, valuetable, False, newfound)
@@ -429,12 +448,11 @@ class PropWriter(NodeVisitor):
                 self._popCond()
         else:
             if found:
-                val,newfound = self._parseandwrite(data, state, tree, valuetable, True, found)
-                self._addTrue(data.getSignalName() + "==" + val)
+                #val,newfound = self._parseandwrite(data, state, tree, valuetable, True, found)
+                #self._addTrue(data.getSignalName() + "==" + val)
                 self.writer.setConseq(self._getCond())
                 self.writer.write()
-                self.writer.clearAnte()
-                self._popCond()
+                #self._popCond()
 
     def getstr(self, tree):
         if self.isDFterm(tree):

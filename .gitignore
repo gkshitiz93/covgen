@@ -2,3 +2,4 @@ pyverilog/
 rtl/
 bin/
 src/*.pyc
+jaspertest/
