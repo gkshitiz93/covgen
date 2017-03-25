@@ -94,8 +94,12 @@ class PropWriter(NodeVisitor):
                         valuetable[value].append((cond, clkstr))
                     else:
                         valuetable[value]=[(cond, clkstr)]
+                    
+                    self.buf.write(str(value) + ' : ' + cond + '\n\n\n')
 
-                    self.buf.write(str(value) + ' : ' + cond + '\n')
+                #for value in valuetable.keys():
+                #    if len(valuetable[value])==1:
+                #        del valuetable[value]
 
             for always in self.moduleinfotable.getAlways().values():
                 if reg in always.getControl():
@@ -296,11 +300,12 @@ class PropWriter(NodeVisitor):
                         #print(valuelist[0][0] + ":" + valuelist[1][0])
                         if valuelist[0][0]==state.getSignalName():
                             if valuelist[1][0] in valuetable.keys():
-                                self.writer.addAntetemp(valuetable[valuelist[1][0]])
+                                self.writer.addAntetemp((valuetable[valuelist[1][0]],string))
+                                #print("Added "+ str(state) + "value of" + valuelist[1][0] + "to the ante list of" + str(data))
                     if valuelist[1][1]:
                         if valuelist[1][0]==state.getSignalName():
                             if valuelist[0][0] in valuetable.keys():
-                                self.writer.addAntetemp(valuetable[valuelist[0][0]])
+                                self.writer.addAntetemp((valuetable[valuelist[0][0]],string))
                     return (string, found or valuelist[0][1] or valuelist[1][1])
 
                 if tree.operator == 'NotEq' or tree.operator == 'NotEql':
@@ -450,6 +455,7 @@ class PropWriter(NodeVisitor):
             if found:
                 #val,newfound = self._parseandwrite(data, state, tree, valuetable, True, found)
                 #self._addTrue(data.getSignalName() + "==" + val)
+                #print(str(data) + ":" + val + " - " + self._getCond())
                 self.writer.setConseq(self._getCond())
                 self.writer.write()
                 #self._popCond()
@@ -578,7 +584,10 @@ class PropWriter(NodeVisitor):
                 msb=tree.msb.value
                 lsb=tree.lsb.value
                 string = self.getstr(tree.var)
-                string+=string+"["+str(msb)+":"+str(lsb)+"]"
+                if msb==lsb:
+                    string+="["+str(msb)+"]"
+                else:
+                    string+="["+str(msb)+":"+str(lsb)+"]"
                 return string
             
             if isinstance(tree, DFConcat):

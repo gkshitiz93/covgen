@@ -37,7 +37,8 @@ class SVWriter(object):
         self.conseq = consequent
 
     def addAntetemp(self, anteinfo):
-        self.ante_temp.extend(anteinfo)
+        for cond in anteinfo[0]:
+            self.ante_temp.append((cond, anteinfo[1]))
     
     def clearAntetemp(self):
         del self.ante_temp[:]
@@ -59,7 +60,7 @@ class SVWriter(object):
         return string
 
     def write(self):
-        for ante in self.ante:
+        for ante, valuecond in self.ante:
             self.buf.write(self.getName() + ': cover property(')
             cond, clkstr = ante
             self.buf.write("@(" + clkstr + ") ")
@@ -71,7 +72,8 @@ class SVWriter(object):
                         pass
                     else:
                         self.buf.write("@(" + self.conseqclock + ") ")
-                self.buf.write(self.conseq)
+                self.buf.write("(" + self.conseq + " && " + valuecond + ")")
+                #self.buf.write(valuecond)
             self.buf.write(");\n\n")
         self.clearAnte()
 
