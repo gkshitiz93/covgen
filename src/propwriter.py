@@ -33,7 +33,7 @@ def intersect(dict1, dict2):
     return z
 
 class PropWriter(NodeVisitor):
-    def __init__(self, moduleinfotable, top, frames, dataflow, buf=sys.stdout):
+    def __init__(self, moduleinfotable, top, frames, dataflow,exhaustive=False, getlocal=True, getglobal=True, buf=sys.stdout):
         self.moduleinfotable=moduleinfotable
         self.top = top
         self.frames = frames
@@ -46,6 +46,9 @@ class PropWriter(NodeVisitor):
         self.chain += ScopeLabel(top, 'module')
         self.buf=buf
         self.cond=[]
+        self.exhaustive=exhaustive
+        self.getlocal=getlocal
+        self.getglobal=getglobal
 
     def start_visit(self):
         oldpath=os.getcwd()
@@ -111,9 +114,10 @@ class PropWriter(NodeVisitor):
                     
                     self.buf.write(str(value) + ' : ' + cond + '\n\n\n')
 
-                #for value in valuetable.keys():
-                #    if len(valuetable[value])==1:
-                #        del valuetable[value]
+                if not self.exhaustive:
+                    for value in valuetable.keys():
+                        if len(valuetable[value])==1:
+                            del valuetable[value]
 
             for always in self.moduleinfotable.getAlways().values():
                 if reg in always.getControl():

@@ -14,9 +14,12 @@ from propwriter import *
 sys.setrecursionlimit(16 * 1024)
 
 class CoverageGenerator(VerilogDataflowAnalyzer):
-    def __init__(self, filelist, topmodule='TOP', preprocess_include=None,preprocess_define=None):
+    def __init__(self, filelist, topmodule='TOP', preprocess_include=None,preprocess_define=None,exhaustive=False, getlocal=True, getglobal=True):
         VerilogDataflowAnalyzer.__init__(self, filelist, topmodule,True,True,preprocess_include,preprocess_define)
         self.moduleinfotable=None
+        self.exhaustive=exhaustive
+        self.getlocal=getlocal
+        self.getglobal=getglobal
         self.modulelist=[]
 
     def generate(self, buf=sys.stdout):
@@ -37,7 +40,7 @@ class CoverageGenerator(VerilogDataflowAnalyzer):
         dataflow = bind_visitor.getDataflows()
         self.frametable = bind_visitor.getFrameTable()
 
-        prop_writer = PropWriter(self.moduleinfotable, self.topmodule, self.frametable, dataflow, buf)
+        prop_writer = PropWriter(self.moduleinfotable, self.topmodule, self.frametable, dataflow, self.exhaustive, self.getlocal, self.getglobal, buf)
         prop_writer.start_visit()
 
     def showModuleInfo(self,buf=sys.stdout):

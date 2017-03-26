@@ -23,6 +23,8 @@ def main():
                          default=[],help="Macro Definition")
     optparser.add_option("-t","--top",dest="topmodule",
                          default="TOP",help="Top module, Default=TOP")
+    optparser.add_option("--ex",action="store_true",dest="exhaustive",
+                         default=False,help="Get exhaustive properties, Default - False")
     (options, args) = optparser.parse_args()
 
     filelist = args
@@ -33,7 +35,7 @@ def main():
     if len(filelist) == 0:
         showVersion()
 
-    generator = CoverageGenerator(filelist, options.topmodule,preprocess_include=options.include,preprocess_define=options.define)
+    generator = CoverageGenerator(filelist, options.topmodule,preprocess_include=options.include,preprocess_define=options.define, exhaustive=options.exhaustive, getlocal=True, getglobal=True)
     g=open("props","w")
     generator.generate(g)
 
