@@ -7,7 +7,6 @@ import re
 class SVWriter(object):
     def __init__(self):
         self.ante=[]
-        self.ante_temp=[]#Conditions which are not finalized
         self.conseq=None
         self.conseqclock=None
         self.buf=sys.stdout
@@ -28,28 +27,19 @@ class SVWriter(object):
     
     def clearAnte(self):
         del self.ante[:]
-        del self.ante_temp[:]
 
     def addAnte(self, anteinfo):
-        self.ante.extend(anteinfo)
+        self.ante.append(anteinfo)
 
     def setConseq(self, consequent):
         self.conseq = consequent
-
-    def addAntetemp(self, anteinfo):
-        for cond in anteinfo[0]:
-            self.ante_temp.append((cond, anteinfo[1]))
-    
-    def clearAntetemp(self):
-        del self.ante_temp[:]
 
     def newSet(self, data, state):
         self.data=str(data[-1])
         self.state=str(state[-1])
 
-    def commitAntetemp(self):
-        self.ante.extend(self.ante_temp)
-        del self.ante_temp[:]
+    def clearLast(self):
+        del self.ante[-1] 
 
     def setDelay(self, delay):
         self.delay=delay
@@ -60,20 +50,19 @@ class SVWriter(object):
         return string
 
     def write(self):
-        for ante, valuecond in self.ante:
-            self.buf.write(self.getName() + ': cover property(')
-            cond, clkstr = ante
-            self.buf.write("@(" + clkstr + ") ")
-            self.buf.write(cond)
-            if(self.conseq):
-                self.buf.write("|->##" + str(self.delay) + " ")
-                if self.conseqclock:
-                    if self.conseqclock == clkstr:
-                        pass
-                    else:
-                        self.buf.write("@(" + self.conseqclock + ") ")
-                self.buf.write("(" + self.conseq + " && " + valuecond + ")")
-                #self.buf.write(valuecond)
-            self.buf.write(");\n\n")
-        self.clearAnte()
+        for antelist in self.ante:
+            for ante in antelist:
+                self.buf.write(self.getName() + ': cover property(')
+                cond, clkstr = ante
+                self.buf.write("@(" + clkstr + ") ")
+                self.buf.write(cond)
+                if(self.conseq):
+                    self.buf.write("|->##" + str(self.delay) + " ")
+                    if self.conseqclock:
+                        if self.conseqclock == clkstr:
+                            pass
+                        else:
+                            self.buf.write("@(" + self.conseqclock + ") ")
+                    self.buf.write(self.conseq)
+                self.buf.write(");\n\n")
 
