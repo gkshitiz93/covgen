@@ -51,7 +51,9 @@ begin : FSM_COMBO
     if(state==IDLE)
         next_state = IDLE;
     if(state==GNT0)
-        if(state)
+        if(req_0)
+            next_state = GNT0;
+        else
             next_state = GNT0;
 end
 //----------Seq Logic-----------------------------
