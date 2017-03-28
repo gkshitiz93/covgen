@@ -14,13 +14,14 @@ from propwriter import *
 sys.setrecursionlimit(16 * 1024)
 
 class CoverageGenerator(VerilogDataflowAnalyzer):
-    def __init__(self, filelist, topmodule='TOP', preprocess_include=None,preprocess_define=None,exhaustive=False, getlocal=True, getglobal=True):
+    def __init__(self, filelist, topmodule='TOP', preprocess_include=None,preprocess_define=None,exhaustive=False, getlocal=True, getglobal=True, ignore=[]):
         VerilogDataflowAnalyzer.__init__(self, filelist, topmodule,True,True,preprocess_include,preprocess_define)
         self.moduleinfotable=None
         self.exhaustive=exhaustive
         self.getlocal=getlocal
         self.getglobal=getglobal
         self.modulelist=[]
+        self.ignore=[]
 
     def generate(self, buf=sys.stdout):
         ast = self.parse()

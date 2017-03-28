@@ -12,7 +12,7 @@ decode: clean
 	@python ../src/main.py --ex -t a25_decode ../rtl/amber25/a25_decode.v
 
 dataflow: clean
-	@python ../src/example_dataflow_analyzer.py -t top ../rtl/test.v
+	@python ../src/example_dataflow_analyzer.py -t a25_decode ../rtl/amber25/a25_decode.v
 
 ex_parser:
 	@python ../src/example_parser.py ../rtl/amber25/a25_wishbone.v

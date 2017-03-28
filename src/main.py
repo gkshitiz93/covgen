@@ -21,9 +21,11 @@ def main():
                          default=[],help="Include path")
     optparser.add_option("-D",dest="define",action="append",
                          default=[],help="Macro Definition")
+    optparser.add_option("-i","--ignore",dest="ignore",action="append",
+                         default=[],help="Module definitions to be ignored")
     optparser.add_option("-t","--top",dest="topmodule",
                          default="TOP",help="Top module, Default=TOP")
-    optparser.add_option("--ex",action="store_true",dest="exhaustive",
+    optparser.add_option("--ex","-e",action="store_true",dest="exhaustive",
                          default=False,help="Get exhaustive properties, Default - False")
     (options, args) = optparser.parse_args()
 
@@ -35,7 +37,7 @@ def main():
     if len(filelist) == 0:
         showVersion()
 
-    generator = CoverageGenerator(filelist, options.topmodule,preprocess_include=options.include,preprocess_define=options.define, exhaustive=options.exhaustive, getlocal=True, getglobal=True)
+    generator = CoverageGenerator(filelist, options.topmodule,preprocess_include=options.include,preprocess_define=options.define, exhaustive=options.exhaustive, getlocal=True, getglobal=True, ignore=options.ignore)
     g=open("props","w")
     generator.generate(g)
 

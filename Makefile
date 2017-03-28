@@ -16,6 +16,7 @@ simple:
 	$(MAKE) -C bin simple
 
 dataflow:
+	@clear
 	$(MAKE) -C bin dataflow
 
 run:
