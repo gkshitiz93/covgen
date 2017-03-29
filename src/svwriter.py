@@ -5,7 +5,7 @@ import os
 import re
 
 class SVWriter(object):
-    def __init__(self):
+    def __init__(self, unique=False):
         self.ante=[]
         self.conseq=None
         self.conseqclock=None
@@ -14,6 +14,8 @@ class SVWriter(object):
         self.counter=1
         self.data=None
         self.state=None
+        self.proplist=[]
+        self.unique=unique
 
     def setFile(self, buf=sys.stdout):
         self.buf=buf
@@ -45,24 +47,36 @@ class SVWriter(object):
         self.delay=delay
 
     def getName(self):
-        string = self.state + "_" + self.data + "_" + str(self.counter)
+        string = self.state + "_" + self.data + "_" + str(self.counter) + " : "
         self.counter+=1
         return string
 
     def write(self):
         for antelist in self.ante:
             for ante in antelist:
-                self.buf.write(self.getName() + ': cover property(')
+                string=""
+                if not self.unique:
+                    string+=self.getName() 
+                string+= 'cover property('
                 cond, clkstr = ante
-                self.buf.write("@(" + clkstr + ") ")
-                self.buf.write(cond)
+                string+="@(" + clkstr + ") "
+                string+=cond
                 if(self.conseq):
-                    self.buf.write("|->##" + str(self.delay) + " ")
+                    string+="|->##" + str(self.delay) + " "
                     if self.conseqclock:
                         if self.conseqclock == clkstr:
                             pass
                         else:
-                            self.buf.write("@(" + self.conseqclock + ") ")
-                    self.buf.write(self.conseq)
-                self.buf.write(");\n\n")
+                            string+="@(" + self.conseqclock + ") "
+                    string+=self.conseq
+                    string+=");\n\n"
+                    self.proplist.append(string)
 
+    def writeAll(self):
+        if self.unique:
+            for prop in set(self.proplist):
+                self.buf.write(prop)
+        else:
+            for prop in self.proplist:
+                self.buf.write(prop)
+        self.proplist=[]

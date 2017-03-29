@@ -33,14 +33,14 @@ def intersect(dict1, dict2):
     return z
 
 class PropWriter(NodeVisitor):
-    def __init__(self, moduleinfotable, top, frames, dataflow,exhaustive=False, getlocal=True, getglobal=True, buf=sys.stdout):
+    def __init__(self, moduleinfotable, top, frames, dataflow,exhaustive=False, getlocal=True, getglobal=True, buf=sys.stdout, unique=False):
         self.moduleinfotable=moduleinfotable
         self.top = top
         self.frames = frames
         self.dataflow = dataflow
         self.binddict = self.dataflow.getBinddict()
         self.optimizer = VerilogOptimizer(dataflow.getTerms())
-        self.writer = SVWriter()
+        self.writer = SVWriter(unique)
         self.moduleinfotable.setCurrent(top)
         self.chain = ScopeChain()
         self.chain += ScopeLabel(top, 'module')
@@ -126,6 +126,7 @@ class PropWriter(NodeVisitor):
                         for bind in self.binddict[datascope]:
                             self.writeProps(datascope, scope, bind, valuetable)
         
+        self.writer.writeAll()
         f.write('\nendmodule')
         f.write("\n\n\n\n")
         f.write("module " + filename + "_wrapper;\n")

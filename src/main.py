@@ -27,6 +27,8 @@ def main():
                          default="TOP",help="Top module, Default=TOP")
     optparser.add_option("--ex","-e",action="store_true",dest="exhaustive",
                          default=False,help="Get exhaustive properties, Default - False")
+    optparser.add_option("--unique","-u",action="store_true",dest="unique",
+                         default=False,help="Generate only unique cover properties, Default - False")
     (options, args) = optparser.parse_args()
 
     filelist = args
@@ -37,7 +39,7 @@ def main():
     if len(filelist) == 0:
         showVersion()
 
-    generator = CoverageGenerator(filelist, options.topmodule,preprocess_include=options.include,preprocess_define=options.define, exhaustive=options.exhaustive, getlocal=True, getglobal=True, ignore=options.ignore)
+    generator = CoverageGenerator(filelist, options.topmodule,preprocess_include=options.include,preprocess_define=options.define, exhaustive=options.exhaustive, getlocal=True, getglobal=True, ignore=options.ignore, unique=options.unique)
     g=open("props","w")
     generator.generate(g)
 

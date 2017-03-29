@@ -1,15 +1,15 @@
 #Makefile for execution
 covgen: clean
-	@python ../src/main.py --ex -t a25_wishbone ../rtl/wishbone.v
+	@python ../src/main.py --unique --ex -t a25_wishbone ../rtl/wishbone.v
 
 test: clean
-	@python ../src/main.py --ex -t top ../rtl/test.v
+	@python ../src/main.py --unique --ex -t top ../rtl/test.v
 
 simple: clean
-	@python ../src/main.py --ex -t top ../rtl/simple.v
+	@python ../src/main.py --unique --ex -t top ../rtl/simple.v
 
 decode: clean
-	@python ../src/main.py --ex -t a25_decode ../rtl/amber25/a25_decode.v
+	@python ../src/main.py --unique --ex -t a25_decode ../rtl/amber25/a25_decode.v
 
 dataflow: clean
 	@python ../src/example_dataflow_analyzer.py -t a25_decode ../rtl/amber25/a25_decode.v
