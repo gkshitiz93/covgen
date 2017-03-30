@@ -18,19 +18,26 @@ from pyverilog.dataflow.moduleinfo import *
 from pyverilog.dataflow.frames import *
 from svwriter import *
 
-def union(dict1, dict2):
+def dictunion(dict1, dict2):
     z=dict1.copy()
     for key in dict2.keys():
         if key in z.keys():
             z[key]=list(set(z[key]) | set(dict2[key]))
     return z
 
-def intersect(dict1, dict2):
+def dictintersect(dict1, dict2):
     z={}
     for key in dict2.keys():
         if key in dict1.keys():
             z[key]=list(set(z[key]) & set(dict2[key]))
     return z
+
+def listintersect(list1, list2):
+    newlist = list(set(list1) & set(list2))
+    if newlist:
+        return True
+    else:
+        return False
 
 class PropWriter(NodeVisitor):
     def __init__(self, moduleinfotable, top, frames, dataflow,exhaustive=False, getlocal=True, getglobal=True, buf=sys.stdout, unique=False):
@@ -123,10 +130,11 @@ class PropWriter(NodeVisitor):
             valuetable[reg]=(clkstr, regtable)
 
         for always in self.moduleinfotable.getAlways().values():
-            for data in always.getState():
-                datascope=self.chain+ScopeLabel(data,'signal')
-                for bind in self.binddict[datascope]:
-                    self.writeProps(datascope, bind, valuetable)
+            if listintersect(always.getControl(), valuetable.keys()):
+                for data in always.getState():
+                    datascope=self.chain+ScopeLabel(data,'signal')
+                    for bind in self.binddict[datascope]:
+                        self.writeProps(datascope, bind, valuetable)
         
         self.writer.writeAll()
         f.write('\nendmodule')
@@ -308,11 +316,11 @@ class PropWriter(NodeVisitor):
             
             if tree.operator == 'Land':
                 string="(" + valuelist[0][0] + "&&" + valuelist[1][0] + ")"
-                newdict=intersect(valuelist[0][1], valuelist[1][1])
+                newdict=dictintersect(valuelist[0][1], valuelist[1][1])
 
             if tree.operator == 'Lor':
                 string="(" + valuelist[0][0] + "||" + valuelist[1][0] + ")"
-                newdict=union(valuelist[0][1], valuelist[1][1])
+                newdict=dictunion(valuelist[0][1], valuelist[1][1])
             
             if tree.operator == 'Uminus':
                 string = "-1*" + valuelist[0][0]
@@ -541,7 +549,7 @@ class PropWriter(NodeVisitor):
             if isinstance(tree, DFConcat):
                 string="{"
                 newfound = False
-                for nodes in tree.nextnodes:
+                for node in tree.nextnodes:
                     nodestr = self.getstr(node)
                     string += nodestr + ','
                 string=string[:-1]
