@@ -13,7 +13,7 @@ class SVWriter(object):
         self.delay=1
         self.counter=1
         self.data=None
-        self.state=None
+        #self.state=None
         self.proplist=[]
         self.unique=unique
 
@@ -36,9 +36,9 @@ class SVWriter(object):
     def setConseq(self, consequent):
         self.conseq = consequent
 
-    def newSet(self, data, state):
+    def newSet(self, data):
         self.data=str(data[-1])
-        self.state=str(state[-1])
+        #self.state=str(state[-1])
 
     def clearLast(self):
         del self.ante[-1] 
@@ -47,7 +47,8 @@ class SVWriter(object):
         self.delay=delay
 
     def getName(self):
-        string = self.state + "_" + self.data + "_" + str(self.counter) + " : "
+        #string = self.state + "_" + self.data + "_" + str(self.counter) + " : "
+        string = self.data + "_" + str(self.counter) + " : "
         self.counter+=1
         return string
 

@@ -93,12 +93,14 @@ class PropWriter(NodeVisitor):
         f.write(');\n\n')
         #The file has been set with a module name and signal list
         self.writer.setFile(f)
+        
+        valuetable={}
                     
         for reg in self.moduleinfotable.getInteresting():
-            valuetable={}
+            regtable={}
+            clkstr=""
             scope=self.chain + ScopeLabel(reg,'signal')
             for bind in self.binddict[scope]:
-                clkstr=""
                 if(bind.isClockEdge()):
                     clkstr=bind.getClockEdge()
                     clkstr=clkstr+"("+ bind.getClockName().getSignalName() + ")"
@@ -107,24 +109,24 @@ class PropWriter(NodeVisitor):
 
                 for value, cond in self.getValues(bind, scope):
                     #print(value + ":" + cond)
-                    if value in valuetable.keys():
-                        valuetable[value].append((cond, clkstr))
+                    if value in regtable.keys():
+                        regtable[value].append(cond)
                     else:
-                        valuetable[value]=[(cond, clkstr)]
+                        regtable[value]=[cond]
                     
                     self.buf.write(str(value) + ' : ' + cond + '\n\n\n')
 
                 if not self.exhaustive:
-                    for value in valuetable.keys():
-                        if len(valuetable[value])==1:
-                            del valuetable[value]
+                    for value in regtable.keys():
+                        if len(regtable[value])==1:
+                            del regtable[value]
+            valuetable[reg]=(clkstr, regtable)
 
-            for always in self.moduleinfotable.getAlways().values():
-                if reg in always.getControl():
-                    for data in always.getState():
-                        datascope=self.chain+ScopeLabel(data,'signal')
-                        for bind in self.binddict[datascope]:
-                            self.writeProps(datascope, scope, bind, valuetable)
+        for always in self.moduleinfotable.getAlways().values():
+            for data in always.getState():
+                datascope=self.chain+ScopeLabel(data,'signal')
+                for bind in self.binddict[datascope]:
+                    self.writeProps(datascope, bind, valuetable)
         
         self.writer.writeAll()
         f.write('\nendmodule')
@@ -237,8 +239,8 @@ class PropWriter(NodeVisitor):
         return isinstance(tree, DFPartselect) or isinstance(tree, DFConcat)
 
 
-    def writeProps(self, data, state, bind, valuetable):
-        self.writer.newSet(data, state)
+    def writeProps(self, data, bind, valuetable):
+        self.writer.newSet(data)
         clkstr=""
         if(bind.isCombination()):
             #print("Combinational Bind: " + str(data))
@@ -250,9 +252,9 @@ class PropWriter(NodeVisitor):
             else:
                 clkstr=bind.getClockName().getSignalName()
         self.writer.setConseqClock(clkstr)
-        self._parseandwrite(data, state, self.optimizer.optimize(bind.tree), valuetable)
+        self._parseandwrite(data, self.optimizer.optimize(bind.tree), valuetable)
     
-    def _getConditionAntes(self, data, state, tree):
+    def _getConditionAntes(self, data, tree):
         if self.isDFterm(tree):
             if "Rename" in self.dataflow.getTerm(tree.name).termtype:
                 for bind in self.binddict[tree.name]:
@@ -269,14 +271,14 @@ class PropWriter(NodeVisitor):
         if self.isDFOp(tree):
             valuelist=[]
             for node in tree.nextnodes:
-                valuelist.append(self._getConditionAntes(data, state, node))
+                valuelist.append(self._getConditionAntes(data, node))
             
             newdict={}
             string=""
             if tree.operator == 'Eq' or tree.operator == 'Eql':
                 string="(" + valuelist[0][0] + "==" + valuelist[1][0] + ")"
-                if valuelist[0][0]==state.getSignalName():
-                    newdict[valuelist[0][0]]=[valuelist[1][0]]
+                #if valuelist[0][0]==state.getSignalName():
+                newdict[valuelist[0][0]]=[valuelist[1][0]]
 
             if tree.operator == 'NotEq' or tree.operator == 'NotEql':
                 string="(" + valuelist[0][0] + "!=" + valuelist[1][0] + ")"
@@ -378,23 +380,25 @@ class PropWriter(NodeVisitor):
             #    return (string, newfound)
         
     
-    def _parseandwrite(self, data, state, tree, valuetable): 
+    def _parseandwrite(self, data, tree, valuetable): 
         if self.isDFBranch(tree):
-            string, antetable = self._getConditionAntes(data, state, tree.condnode)
+            string, antetable = self._getConditionAntes(data, tree.condnode)
             if(tree.truenode):
                 antelist=[]
-                for values in antetable.values():
-                    for value in values:
-                        if value in valuetable.keys():
-                            antelist.extend(valuetable[value])
+                for statename,values in antetable.items():
+                    if statename in valuetable.keys():
+                        clkstr, table = valuetable[statename]
+                        for value in values:
+                            if value in table.keys():
+                                antelist.extend([(cond, clkstr) for cond in table[value]])
                 self.writer.addAnte(antelist)
                 self._addTrue(string)
-                self._parseandwrite(data, state, tree.truenode, valuetable)
+                self._parseandwrite(data, tree.truenode, valuetable)
                 self._popCond()
                 self.writer.clearLast()
             if(tree.falsenode): 
                 self._addFalse(string)
-                self._parseandwrite(data, state, tree.falsenode, valuetable)
+                self._parseandwrite(data, tree.falsenode, valuetable)
                 self._popCond()
         else:
             #val,newfound = self._parseandwrite(data, state, tree, valuetable, True, found)
