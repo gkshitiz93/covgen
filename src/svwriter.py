@@ -81,3 +81,6 @@ class SVWriter(object):
             for prop in self.proplist:
                 self.buf.write(prop)
         self.proplist=[]
+
+    def anyProp(self):
+        return bool(self.proplist)

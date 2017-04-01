@@ -1,57 +1,33 @@
-module top (
+module arb2 (
 clock      , // clock
 reset      , // Active high, syn reset
-req_0      , // Request 0
-req_1      , // Request 1
+req      , // Request 1
 gnt_0      , // Grant 0
 gnt_1      
 );
 //-------------Input Ports-----------------------------
-input   clock,reset,req_0,req_1;
+input   clock,reset;
+input [2:0] req;
  //-------------Output Ports----------------------------
 output  gnt_0,gnt_1;
 //-------------Input ports Data Type-------------------
-wire    clock,reset,req_0,req_1;
+wire    clock,reset;
 //-------------Output Ports Data Type------------------
 reg     gnt_0,gnt_1;
 //-------------Internal Constants--------------------------
 parameter SIZE = 3;
 parameter IDLE  = 3'b001,GNT0 = 3'b010,GNT1 = 3'b100;
-parameter [2:0] RST_WAIT1      = 3'd0,
-                 RST_WAIT2      = 3'd1,
-                 INT_WAIT1      = 3'd2,
-                 INT_WAIT2      = 3'd3,
-                 EXECUTE        = 3'd4,
-                 PRE_FETCH_EXEC = 3'd3,  // Execute the Pre-Fetched Instruction
-                 MEM_WAIT1      = 3'd6,  // conditionally decode current instruction, in case
-                                         // previous instruction does not execute in S2
-                 MEM_WAIT2      = 3'd3,
-                 PC_STALL1      = 3'd4,  // Program Counter altered
-                                         // conditionally decude current instruction, in case
-                                         // previous instruction does not execute in S2
-                 PC_STALL2      = 3'd9,
-                 MTRANS_EXEC1   = 3'd1,
-                 MTRANS_EXEC2   = 3'd1,
-                 MTRANS_ABORT   = 3'd1,
-                 MULT_PROC1     = 3'd1,  // first cycle, save pre fetch instruction
-                 MULT_PROC2     = 3'd1,  // do multiplication
-                 MULT_STORE     = 3'd1,  // save RdLo
-                 MULT_ACCUMU    = 3'd1,  // Accumulate add lower 32 bits
-                 SWAP_WRITE     = 3'd1,
-                 SWAP_WAIT1     = 3'd1,
-                 SWAP_WAIT2     = 3'd1,
-                 COPRO_WAIT     = 3'd2;
 //-------------Internal Variables---------------------------
 reg   [SIZE-1:0]          state        ;// Seq part of the FSM
 reg   [SIZE-1:0]          next_state   ;// combo part of FSM
 //----------Code startes Here------------------------
-always @ (state or req_0 or req_1)
+always @ (state or req[0] or req[1])
 begin : FSM_COMBO
     next_state=state;
     if(state==IDLE)
         next_state = IDLE;
     if(state==GNT0)
-        if(req_0)
+        if(req[0])
             next_state = GNT0;
         else
             next_state = GNT0;
@@ -95,3 +71,22 @@ end
 end // End Of Block OUTPUT_LOGIC
 
 endmodule // End of Module arbitergg
+
+module top(
+input clock      , // clock
+input reset      , // Active high, syn reset
+input [1:0] req      , // Request 0
+output gnt_0      , // Grant 0
+output gnt_1      ,
+input something
+);
+
+arb arb1(.reset(reset), .gnt_0(gnt_0), .req({req[1:0], something}),.clock(clock), .gnt_1(gnt_1));
+//ccx_buff_macro__dbuff_32x__rep_1__stack_none__width_8 i_buf_test_r     (
+//	.din	({scan_in[1:0],tcu_pce_ov, tcu_aclk, 
+//              tcu_bclk, tcu_scan_en, cluster_arst_l,tcu_atpg_mode}),
+//	.dout	({scan_in_buf[1:0],tcu_pce_ov_buf,tcu_aclk_buf, 
+//              tcu_bclk_buf, tcu_scan_en_buf, cluster_arst_l_buf,tcu_atpg_mode_buf})
+//);
+
+endmodule

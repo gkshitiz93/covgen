@@ -40,7 +40,7 @@ def listintersect(list1, list2):
         return False
 
 class PropWriter(NodeVisitor):
-    def __init__(self, moduleinfotable, top, frames, dataflow,exhaustive=False, getlocal=True, getglobal=True, buf=sys.stdout, unique=False):
+    def __init__(self, moduleinfotable, top, frames, dataflow, blackboxed=[], exhaustive=False, getlocal=True, getglobal=True, buf=sys.stdout, unique=False):
         self.moduleinfotable=moduleinfotable
         self.top = top
         self.frames = frames
@@ -56,6 +56,7 @@ class PropWriter(NodeVisitor):
         self.exhaustive=exhaustive
         self.getlocal=getlocal
         self.getglobal=getglobal
+        self.blackboxed=blackboxed
 
     def start_visit(self):
         oldpath=os.getcwd()
@@ -72,37 +73,9 @@ class PropWriter(NodeVisitor):
         for const in self.frames.getConsts(self.chain).keys():
             for bind in self.binddict[const]:
                 self.optimizer.setConstant(const, DFEvalValue(bind.tree.eval()))
-
-        filename=str(self.chain)+'_test'
-        filename=filename.replace(".","_")
-        f=open(filename + '.sv',"w")
-        f.write('module ' + filename + '(\n')
-        string=''
-        for signal in self.frames.getSignals(self.chain).keys():
-            string+='input '
-            msb, lsb, lenmsb, lenlsb = self.getTermWidths(signal)
-            if msb: 
-                v_msb = str(self.optimizer.optimize(msb).value)
-            if lsb: 
-                v_lsb = str(self.optimizer.optimize(lsb).value)
-                if v_msb is not v_lsb:
-                    string+='[' + v_msb + ':' + v_lsb + '] '
-            string+=signal.getSignalName()
-            if lenmsb: 
-                v_lmsb = str(self.optimizer.optimize(lenmsb).value)
-            if lenlsb: 
-                v_llsb = str(self.optimizer.optimize(lenlsb).value)
-                if v_lmsb is not v_llsb:
-                    string+=' [' + v_lmsb + ':' + v_llsb + '] '
-            string+=',\n'
-        string=string[:-2]
-        f.write(string)
-        f.write(');\n\n')
-        #The file has been set with a module name and signal list
-        self.writer.setFile(f)
         
         valuetable={}
-                    
+        
         for reg in self.moduleinfotable.getInteresting():
             regtable={}
             clkstr=""
@@ -135,20 +108,48 @@ class PropWriter(NodeVisitor):
                     datascope=self.chain+ScopeLabel(data,'signal')
                     for bind in self.binddict[datascope]:
                         self.writeProps(datascope, bind, valuetable)
-        
-        self.writer.writeAll()
-        f.write('\nendmodule')
-        f.write("\n\n\n\n")
-        f.write("module " + filename + "_wrapper;\n")
-        if len(self.chain)==1:
-            #TOP module
-            f.write("bind ")
-            f.write(str(self.chain) + " " + filename + " " + filename + "_props(.*);\n")
-        else:
-            f.write("bind " + self.moduleinfotable.getCurrent() + " : ")
-            f.write(str(self.chain) + " " + filename + " " + filename + "_props(.*);\n")
-        f.write("\n\nendmodule")
-        f.close()
+
+        if self.writer.anyProp():
+            filename=str(self.chain)+'_test'
+            filename=filename.replace(".","_")
+            f=open(filename + '.sv',"w")
+            f.write('module ' + filename + '(\n')
+            self.writer.setFile(f)
+            string=''
+            for signal in self.frames.getSignals(self.chain).keys():
+                string+='input '
+                msb, lsb, lenmsb, lenlsb = self.getTermWidths(signal)
+                if msb: 
+                    v_msb = str(self.optimizer.optimize(msb).value)
+                if lsb: 
+                    v_lsb = str(self.optimizer.optimize(lsb).value)
+                    if v_msb is not v_lsb:
+                        string+='[' + v_msb + ':' + v_lsb + '] '
+                string+=signal.getSignalName()
+                if lenmsb: 
+                    v_lmsb = str(self.optimizer.optimize(lenmsb).value)
+                if lenlsb: 
+                    v_llsb = str(self.optimizer.optimize(lenlsb).value)
+                    if v_lmsb is not v_llsb:
+                        string+=' [' + v_lmsb + ':' + v_llsb + '] '
+                string+=',\n'
+            string=string[:-2]
+            f.write(string)
+            f.write(');\n\n')
+            #The file has been set with a module name and signal list
+            self.writer.writeAll()
+            f.write('\nendmodule')
+            f.write("\n\n\n\n")
+            f.write("module " + filename + "_wrapper;\n")
+            if len(self.chain)==1:
+                #TOP module
+                f.write("bind ")
+                f.write(str(self.chain) + " " + filename + " " + filename + "_props(.*);\n")
+            else:
+                f.write("bind " + self.moduleinfotable.getCurrent() + " : ")
+                f.write(str(self.chain) + " " + filename + " " + filename + "_props(.*);\n")
+            f.write("\n\nendmodule")
+            f.close()
         self.generic_visit(node)
 
     def getValues(self, bind, name):
@@ -577,6 +578,8 @@ class PropWriter(NodeVisitor):
 
     def _visit_Instance_body(self, node, nodename, arrayindex=None):
         if node.module in primitives: return self._visit_Instance_primitive(node, arrayindex)
+        
+        if node.module in self.blackboxed: return 
 
         if nodename == '':
             raise verror.FormatError("Module %s requires an instance name" % node.module)
