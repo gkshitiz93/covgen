@@ -7,6 +7,12 @@ from optparse import OptionParser
 import pyverilog.utils.version
 from covgen import CoverageGenerator
 
+def file_len(fname):
+    with open(fname) as f:
+        for i, l in enumerate(f):
+            pass
+    return i + 1
+
 def main():
     INFO = "Automatic cover property generator"
     USAGE = "Usage: python main.py -t TOPMODULE [*.v]"
@@ -33,8 +39,12 @@ def main():
 
     filelist = args
 
+    count=0
     for f in filelist:
         if not os.path.exists(f): raise IOError("file not found: " + f)
+        print(f + "starting at : " + str(count))
+        count+=file_len(f)
+         
 
     if len(filelist) == 0:
         showVersion()

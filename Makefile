@@ -2,6 +2,9 @@
 all:
 	@clear
 	$(MAKE) -C bin covgen
+ccu:
+	@clear
+	$(MAKE) -C bin ccu
 
 ccx:
 	@clear
@@ -10,6 +13,10 @@ ccx:
 test:
 	@clear
 	$(MAKE) -C bin test
+
+amber:
+	@clear
+	$(MAKE) -C bin amber
 
 data_test:
 	@clear
