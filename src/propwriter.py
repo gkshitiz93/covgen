@@ -23,6 +23,8 @@ def dictunion(dict1, dict2):
     for key in dict2.keys():
         if key in z.keys():
             z[key]=list(set(z[key]) | set(dict2[key]))
+        else:
+            z[key]=set(dict2[key])
     return z
 
 def dictintersect(dict1, dict2):
@@ -30,6 +32,8 @@ def dictintersect(dict1, dict2):
     for key in dict2.keys():
         if key in dict1.keys():
             z[key]=list(set(z[key]) & set(dict2[key]))
+        else:
+            z[key]=set(dict2[key])
     return z
 
 def listintersect(list1, list2):
@@ -87,18 +91,18 @@ class PropWriter(NodeVisitor):
                 else:
                     clkstr=bind.getClockName().getSignalName()
 
-                for value, cond in self.getValues(bind, scope):
+                for value, cond, isexpr in self.getValues(bind, scope):
                     #print(value + ":" + cond)
                     if value in regtable.keys():
-                        regtable[value].append(cond)
+                        regtable[value][1].append(cond)
                     else:
-                        regtable[value]=[cond]
+                        regtable[value]=(isexpr, [cond])
                     
                     self.buf.write(str(value) + ' : ' + cond + '\n\n\n')
 
                 if not self.exhaustive:
                     for value in regtable.keys():
-                        if len(regtable[value])==1:
+                        if len(regtable[value][1])==1:
                             del regtable[value]
             valuetable[reg]=(clkstr, regtable)
 
@@ -146,7 +150,7 @@ class PropWriter(NodeVisitor):
                 f.write("bind ")
                 f.write(str(self.chain) + " " + filename + " " + filename + "_props(.*);\n")
             else:
-                f.write("bind " + self.moduleinfotable.getCurrent() + " : ")
+                f.write("bind " + self.moduleinfotable.getCurrent() + " : $root.")
                 f.write(str(self.chain) + " " + filename + " " + filename + "_props(.*);\n")
             f.write("\n\nendmodule")
             f.close()
@@ -177,7 +181,6 @@ class PropWriter(NodeVisitor):
                 for bind in self.binddict[tree.name]:
                         ret.extend(self.getValues(bind, name))
             else:
-                ret.append((str(tree.getTermName()), self._getCond()))
                 #print("Reached " + str(tree.getTermName()))
                 #always=self.moduleinfotable.getAlwaysfromState(tree.getTermName())
                 #if always:
@@ -185,22 +188,24 @@ class PropWriter(NodeVisitor):
                 for bind in self.binddict[tree.name]:
                     if bind.isCombination():
                         ret.extend(self.getValues(bind, name))
+                    else: 
+                        ret.append((str(tree.getTermName()), self._getCond(), True))
 
         if self.isDFeval(tree):
-            ret.append((str(tree.value), self._getCond()))
+            ret.append((str(tree.value), self._getCond(), False))
         
         if self.isDFConst(tree):
-            ret.append((str(tree.eval()), self._getCond()))
+            ret.append((str(tree.eval()), self._getCond(), False))
         
         if self.isDFOp(tree):
-            ret.append((self.getstr(tree), self._getCond()))
+            ret.append((self.getstr(tree), self._getCond(), True))
         
         if self.isDFparts(tree):
-            ret.append((self.getstr(tree), self._getCond()))
+            ret.append((self.getstr(tree), self._getCond(), True))
         
-        if(isinstance(tree, DFPointer)):
+        if isinstance(tree, DFPointer):
             print("What is a pointer!!!")
-            ret.append(("What is a pointer", self_getCond()))
+            ret.append(("What is a pointer", self_getCond(), False))
         return ret
     
     def _addTrue(self, condition):
@@ -264,12 +269,14 @@ class PropWriter(NodeVisitor):
         self._parseandwrite(data, self.optimizer.optimize(bind.tree), valuetable)
     
     def _getConditionAntes(self, data, tree):
+        newdict={}
         if self.isDFterm(tree):
             if "Rename" in self.dataflow.getTerm(tree.name).termtype:
                 for bind in self.binddict[tree.name]:
                     return(self.getstr(self.optimizer.optimize(bind.tree)), {})
             else:
-                return (str(tree.getTermName()), {})
+                newdict[str(tree.getTermName())]="1"
+                return (str(tree.getTermName()), newdict)
 
         if self.isDFeval(tree):
             return (str(tree.value), {})
@@ -282,7 +289,6 @@ class PropWriter(NodeVisitor):
             for node in tree.nextnodes:
                 valuelist.append(self._getConditionAntes(data, node))
             
-            newdict={}
             string=""
             if tree.operator == 'Eq' or tree.operator == 'Eql':
                 string="(" + valuelist[0][0] + "==" + valuelist[1][0] + ")"
@@ -293,17 +299,9 @@ class PropWriter(NodeVisitor):
                 string="(" + valuelist[0][0] + "!=" + valuelist[1][0] + ")"
             
             if tree.operator == 'Ulnot':
-                if valuelist[0][0] == "0" or valuelist[0][0] == "False":
-                    return ("1", found or valuelist[0][1])
-                if valuelist[0][0] == "1" or valuelist[0][0] == "True":
-                    return ("0", found or valuelist[0][1])
                 string="(!(" + valuelist[0][0] + "))"
 
             if tree.operator == 'Unot':
-                if valuelist[0][0] == "0" or valuelist[0][0] == "False":
-                    return ("1", found or valuelist[0][1])
-                if valuelist[0][0] == "1" or valuelist[0][0] == "True":
-                    return ("0", found or valuelist[0][1])
                 string="(~(" + valuelist[0][0] + "))"
 
             if tree.operator == 'LessThan':
@@ -394,12 +392,18 @@ class PropWriter(NodeVisitor):
             string, antetable = self._getConditionAntes(data, tree.condnode)
             if(tree.truenode):
                 antelist=[]
+                #print("Condnode: " + string + "Node: " + str(tree.condnode.__class__.__name__))
                 for statename,values in antetable.items():
+                    #print("State: " + statename)
                     if statename in valuetable.keys():
                         clkstr, table = valuetable[statename]
                         for value in values:
                             if value in table.keys():
-                                antelist.extend([(cond, clkstr) for cond in table[value]])
+                                antelist.extend([(cond, clkstr) for cond in table[value][1]])
+                        for value in table.keys():
+                            if table[value][0]:
+                                antelist.extend([(cond, clkstr) for cond in table[value][1]])
+                                #antelist.extend([(cond+"(added for " + statename + "==" + value +")", clkstr) for cond in table[value][1]])
                 self.writer.addAnte(antelist)
                 self._addTrue(string)
                 self._parseandwrite(data, tree.truenode, valuetable)
