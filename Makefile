@@ -26,6 +26,10 @@ decode:
 	@clear
 	$(MAKE) -C bin decode
 
+opensparc:
+	@clear
+	$(MAKE) -C bin opensparc
+
 simple:
 	@clear
 	$(MAKE) -C bin simple
@@ -33,6 +37,14 @@ simple:
 dataflow:
 	@clear
 	$(MAKE) -C bin dataflow
+
+fifos:
+	@clear
+	$(MAKE) -C bin fifos
+
+i2c:
+	@clear
+	$(MAKE) -C bin i2c
 
 ex_dataflow:
 	@clear

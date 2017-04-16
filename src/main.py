@@ -42,8 +42,8 @@ def main():
     count=0
     for f in filelist:
         if not os.path.exists(f): raise IOError("file not found: " + f)
-        #print(f + "starting at : " + str(count))
-        #count+=file_len(f)
+        print(f + " starting at : " + str(count))
+        count+=file_len(f)
          
 
     if len(filelist) == 0:

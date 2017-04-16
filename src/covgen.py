@@ -45,7 +45,7 @@ class CoverageGenerator(VerilogDataflowAnalyzer):
         bind_visitor.start_visit()
         dataflow = bind_visitor.getDataflows()
         self.frametable = bind_visitor.getFrameTable()
-
+        print("\n\nBinding done:\n\n")
         prop_writer = PropWriter(self.moduleinfotable, self.topmodule, self.frametable, dataflow, blackboxed, self.exhaustive, self.getlocal, self.getglobal, buf, self.unique)
         prop_writer.start_visit()
 
