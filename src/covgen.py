@@ -14,7 +14,7 @@ from propwriter import *
 sys.setrecursionlimit(16 * 1024)
 
 class CoverageGenerator(VerilogDataflowAnalyzer):
-    def __init__(self, filelist, topmodule='TOP', preprocess_include=None,preprocess_define=None,exhaustive=False, getlocal=True, getglobal=True, ignore=[], unique=False):
+    def __init__(self, filelist, topmodule='TOP', preprocess_include=None,preprocess_define=None,exhaustive=False, getlocal=True, getglobal=True, ignore=[], unique=False, debug=False):
         VerilogDataflowAnalyzer.__init__(self, filelist, topmodule,True,True,preprocess_include,preprocess_define)
         self.moduleinfotable=None
         self.exhaustive=exhaustive
@@ -23,7 +23,7 @@ class CoverageGenerator(VerilogDataflowAnalyzer):
         self.modulelist=[]
         self.ignore=[]
         self.unique=unique
-        self.debug=True
+        self.debug=debug
 
     def generate(self, buf=sys.stdout):
         ast = self.parse()
@@ -45,8 +45,9 @@ class CoverageGenerator(VerilogDataflowAnalyzer):
         bind_visitor.start_visit()
         dataflow = bind_visitor.getDataflows()
         self.frametable = bind_visitor.getFrameTable()
-        print("\n\nBinding done:\n\n")
-        prop_writer = PropWriter(self.moduleinfotable, self.topmodule, self.frametable, dataflow, blackboxed, self.exhaustive, self.getlocal, self.getglobal, buf, self.unique)
+        #self.binddict = dataflow.getBinddict()
+        #print("\n\nBinding done:\n\n")
+        prop_writer = PropWriter(self.moduleinfotable, self.topmodule, self.frametable, dataflow, blackboxed, self.exhaustive, self.getlocal, self.getglobal, buf, self.unique, self.debug)
         prop_writer.start_visit()
 
     def showModuleInfo(self,buf=sys.stdout):

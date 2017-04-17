@@ -21,7 +21,9 @@ def main():
         print(INFO)
         print(USAGE)
         sys.exit()
-    
+    #Make True to print important information
+    debug=False 
+
     optparser = OptionParser()
     optparser.add_option("-I","--include",dest="include",action="append",
                          default=[],help="Include path")
@@ -42,21 +44,31 @@ def main():
     count=0
     for f in filelist:
         if not os.path.exists(f): raise IOError("file not found: " + f)
-        print(f + " starting at : " + str(count))
-        count+=file_len(f)
+        if debug:
+            print(f + " starting at : " + str(count))
+            count+=file_len(f)
          
 
     if len(filelist) == 0:
         showVersion()
 
-    generator = CoverageGenerator(filelist, options.topmodule,preprocess_include=options.include,preprocess_define=options.define, exhaustive=options.exhaustive, getlocal=True, getglobal=True, ignore=options.ignore, unique=options.unique)
-    g=open("props","w")
+    generator = CoverageGenerator(filelist, options.topmodule,preprocess_include=options.include,preprocess_define=options.define, exhaustive=options.exhaustive, getlocal=True, getglobal=True, ignore=options.ignore, unique=options.unique, debug=debug)
+    
+    g=open("propdata","w")
     generator.generate(g)
+        
+    #binddict = generator.getBinddict()
+    #print('Bind:')
+    #for bk, bv in sorted(binddict.items(), key=lambda x:str(x[0])):
+    #    print(bk.__class__.__name__)
+    #    print(bk)
+    #    for bvi in bv:
+    #        print(bvi.__class__.__name__)
+    #        print(bvi.tostr())
 
-    f=open("ast","w")
-    generator.showAST(f)
-    f.close()
-
+    #f=open("ast","w")
+    #generator.showAST(f)
+    #f.close()
     #f=open("info","w")
     #generator.showInfo(f)
     #f.close()
@@ -64,7 +76,7 @@ def main():
     #f=open("frame","w")
     #generator.printFrames(f)
     #f.close()
-    
+
     f=open("modules","w")
     generator.showModuleInfo(f)
     f.close()

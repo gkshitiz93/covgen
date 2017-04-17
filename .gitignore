@@ -3,3 +3,4 @@ rtl/
 bin/
 src/*.pyc
 jaspertest/
+results/

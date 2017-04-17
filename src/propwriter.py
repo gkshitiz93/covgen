@@ -44,7 +44,7 @@ def listintersect(list1, list2):
         return False
 
 class PropWriter(NodeVisitor):
-    def __init__(self, moduleinfotable, top, frames, dataflow, blackboxed=[], exhaustive=False, getlocal=True, getglobal=True, buf=sys.stdout, unique=False):
+    def __init__(self, moduleinfotable, top, frames, dataflow, blackboxed=[], exhaustive=False, getlocal=True, getglobal=True, buf=sys.stdout, unique=False, debug=False):
         self.moduleinfotable=moduleinfotable
         self.top = top
         self.frames = frames
@@ -61,6 +61,7 @@ class PropWriter(NodeVisitor):
         self.getlocal=getlocal
         self.getglobal=getglobal
         self.blackboxed=blackboxed
+        self.debug=debug
 
     def start_visit(self):
         oldpath=os.getcwd()
@@ -74,10 +75,11 @@ class PropWriter(NodeVisitor):
         os.chdir(oldpath)
 
     def visit_ModuleDef(self, node):
+        if self.debug:
+            print("Visiting Module : " + str(node.name))
         for const in self.frames.getConsts(self.chain).keys():
             for bind in self.binddict[const]:
-                self.optimizer.setConstant(const, DFEvalValue(bind.tree.eval()))
-        
+                self.optimizer.setConstant(const, self.optimizer.optimize(bind.tree))                     
         valuetable={}
         
         for reg in self.moduleinfotable.getInteresting():
@@ -85,6 +87,9 @@ class PropWriter(NodeVisitor):
             clkstr=""
             scope=self.chain + ScopeLabel(reg,'signal')
             for bind in self.binddict[scope]:
+                if bind.isCombination():
+                    continue
+                
                 if(bind.isClockEdge()):
                     clkstr=bind.getClockEdge()
                     clkstr=clkstr+"("+ bind.getClockName().getSignalName() + ")"
@@ -155,6 +160,8 @@ class PropWriter(NodeVisitor):
             f.write("\n\nendmodule")
             f.close()
         self.generic_visit(node)
+        if self.debug:
+            print("Exiting Module : " + str(node.name))
 
     def getValues(self, bind, name):
         ret=[]
@@ -201,11 +208,7 @@ class PropWriter(NodeVisitor):
             ret.append((self.getstr(tree), self._getCond(), True))
         
         if self.isDFparts(tree):
-            ret.append((self.getstr(tree), self._getCond(), True))
-        
-        if isinstance(tree, DFPointer):
-            print("What is a pointer!!!")
-            ret.append(("What is a pointer", self_getCond(), False))
+            ret.append((self.getstr(tree), self._getCond(), True)) 
         return ret
     
     def _addTrue(self, condition):
@@ -244,13 +247,13 @@ class PropWriter(NodeVisitor):
         return isinstance(tree, DFEvalValue)
 
     def isDFOp(self, tree):
-        if isinstance(tree, DFPointer):
-            print("What is a pointer!")
-            sys.exit()
+        #if isinstance(tree, DFPointer):
+        #    print("What is a pointer!")
+        #    sys.exit()
         return isinstance(tree, DFOperator) 
     
     def isDFparts(self, tree):
-        return isinstance(tree, DFPartselect) or isinstance(tree, DFConcat)
+        return isinstance(tree, DFPartselect) or isinstance(tree, DFConcat) or isinstance(tree, DFPointer)
 
 
     def writeProps(self, data, bind, valuetable):
@@ -542,8 +545,8 @@ class PropWriter(NodeVisitor):
         
         if self.isDFparts(tree):
             if isinstance(tree, DFPartselect):
-                msb=tree.msb.value
-                lsb=tree.lsb.value
+                msb=self.getstr(tree.msb)
+                lsb=self.getstr(tree.lsb)
                 string = self.getstr(tree.var)
                 if msb==lsb:
                     string+="["+str(msb)+"]"
@@ -559,6 +562,12 @@ class PropWriter(NodeVisitor):
                     string += nodestr + ','
                 string=string[:-1]
                 string+="}"
+                return string
+            
+            if isinstance(tree, DFPointer):
+                ptr=self.getstr(tree.ptr)
+                string = self.getstr(tree.var)
+                string+="["+ptr+"]"
                 return string
 
     def visit_InstanceList(self, node):
@@ -584,6 +593,9 @@ class PropWriter(NodeVisitor):
         if node.module in primitives: return self._visit_Instance_primitive(node, arrayindex)
         
         if node.module in self.blackboxed: return 
+        
+        if self.debug:
+            print("Analyzing instance " + nodename + " of type " + node.module)
 
         if nodename == '':
             raise verror.FormatError("Module %s requires an instance name" % node.module)
