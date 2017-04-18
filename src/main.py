@@ -22,7 +22,7 @@ def main():
         print(USAGE)
         sys.exit()
     #Make True to print important information
-    debug=False 
+    debug=False
 
     optparser = OptionParser()
     optparser.add_option("-I","--include",dest="include",action="append",
@@ -66,9 +66,9 @@ def main():
     #        print(bvi.__class__.__name__)
     #        print(bvi.tostr())
 
-    #f=open("ast","w")
-    #generator.showAST(f)
-    #f.close()
+    f=open("ast","w")
+    generator.showAST(f)
+    f.close()
     #f=open("info","w")
     #generator.showInfo(f)
     #f.close()

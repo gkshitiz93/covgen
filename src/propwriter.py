@@ -95,7 +95,7 @@ class PropWriter(NodeVisitor):
                     clkstr=clkstr+"("+ bind.getClockName().getSignalName() + ")"
                 else:
                     clkstr=bind.getClockName().getSignalName()
-
+                
                 for value, cond, isexpr in self.getValues(bind, scope):
                     #print(value + ":" + cond)
                     if value in regtable.keys():
@@ -166,7 +166,9 @@ class PropWriter(NodeVisitor):
     def getValues(self, bind, name):
         ret=[]
         #print(name)
+        #print(bind.tostr())
         ret=self.parseTree(self.optimizer.optimize(bind.tree), name, ret)
+        #print("Done " + str(name))
         return ret 
 
     def parseTree(self, tree, name, oldlist = []):
@@ -192,11 +194,12 @@ class PropWriter(NodeVisitor):
                 #always=self.moduleinfotable.getAlwaysfromState(tree.getTermName())
                 #if always:
                     #if name.getSignalName() in always.getControl():
-                for bind in self.binddict[tree.name]:
-                    if bind.isCombination():
-                        ret.extend(self.getValues(bind, name))
-                    else: 
-                        ret.append((str(tree.getTermName()), self._getCond(), True))
+                if tree.name in self.binddict.keys():
+                    for bind in self.binddict[tree.name]:
+                        if bind.isCombination():
+                            ret.extend(self.getValues(bind, name))
+                        else: 
+                            ret.append((str(tree.getTermName()), self._getCond(), True))
 
         if self.isDFeval(tree):
             ret.append((str(tree.value), self._getCond(), False))

@@ -21,7 +21,7 @@ class CoverageGenerator(VerilogDataflowAnalyzer):
         self.getlocal=getlocal
         self.getglobal=getglobal
         self.modulelist=[]
-        self.ignore=[]
+        self.ignore=ignore
         self.unique=unique
         self.debug=debug
 
@@ -33,16 +33,22 @@ class CoverageGenerator(VerilogDataflowAnalyzer):
         self.moduleinfotable = module_visitor.get_moduleinfotable()
         #for name in self.moduleinfotable.get_names():
         #    print(name)
+        if self.debug:
+            print("Module visit done")
         self.moduleinfotable.findInteresting()
         
-        signal_visitor = SignalVisitor(self.moduleinfotable, self.topmodule, self.debug)
+        signal_visitor = SignalVisitor(self.moduleinfotable, self.topmodule, self.debug, self.ignore)
         signal_visitor.start_visit()
+        if self.debug:
+            print("Signal visit done")
         
         frametable = signal_visitor.getFrameTable()
         blackboxed = signal_visitor.getBlackboxed()
         
         bind_visitor = BindVisitor(self.moduleinfotable, self.topmodule, frametable, blackboxed, False, self.debug)
         bind_visitor.start_visit()
+        if self.debug:
+            print("Bind visit done")
         dataflow = bind_visitor.getDataflows()
         self.frametable = bind_visitor.getFrameTable()
         #self.binddict = dataflow.getBinddict()
