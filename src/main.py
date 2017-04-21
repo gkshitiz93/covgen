@@ -66,9 +66,9 @@ def main():
     #        print(bvi.__class__.__name__)
     #        print(bvi.tostr())
 
-    f=open("ast","w")
-    generator.showAST(f)
-    f.close()
+    #f=open("ast","w")
+    #generator.showAST(f)
+    #f.close()
     #f=open("info","w")
     #generator.showInfo(f)
     #f.close()

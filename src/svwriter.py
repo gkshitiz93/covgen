@@ -48,38 +48,49 @@ class SVWriter(object):
 
     def getName(self):
         #string = self.state + "_" + self.data + "_" + str(self.counter) + " : "
-        string = self.data + "_" + str(self.counter) + " : "
+        #string = self.data + "_" + str(self.counter) + " : "
+        string = "prop_" + str(self.counter) + " : " 
         self.counter+=1
         return string
 
     def write(self):
+        ##Debug props using printAnte and printConseq
+        printAnte=True
+        printConseq=True
+
         for antelist in self.ante:
             for ante in antelist:
                 string=""
-                if not self.unique:
-                    string+=self.getName() 
+                #if not self.unique:
+                #    string+=self.getName() 
                 string+= 'cover property('
                 cond, clkstr = ante
-                string+="@(" + clkstr + ") "
-                string+=cond
+                if printAnte:
+                    string+="@(" + clkstr + ") "
+                    string+=cond
                 if(self.conseq):
-                    string+="|->##" + str(self.delay) + " "
-                    if self.conseqclock:
-                        if self.conseqclock == clkstr:
-                            pass
+                    if printAnte and printConseq:
+                        string+="|->##" + str(self.delay) + " "
+                    if printConseq:
+                        if self.conseqclock:
+                            if self.conseqclock == clkstr and printAnte:
+                                pass
+                            else:
+                                string+="@(" + self.conseqclock + ") "
                         else:
-                            string+="@(" + self.conseqclock + ") "
-                    string+=self.conseq
+                            if not printAnte:
+                                string+="@(" + clkstr + ") "
+                        string+=self.conseq
                     string+=");\n\n"
                     self.proplist.append(string)
 
     def writeAll(self):
         if self.unique:
             for prop in set(self.proplist):
-                self.buf.write(prop)
+                self.buf.write(self.getName() + prop)
         else:
             for prop in self.proplist:
-                self.buf.write(prop)
+                self.buf.write(self.getName() + prop)
         self.proplist=[]
 
     def anyProp(self):

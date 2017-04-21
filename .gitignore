@@ -4,3 +4,4 @@ bin/
 src/*.pyc
 jaspertest/
 results/
+oldResults/

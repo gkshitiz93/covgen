@@ -112,6 +112,48 @@ aes-128:
 	rm -rf results/aes-128
 	cp -r bin results/aes-128
 
+fft:
+	@clear
+	$(MAKE) -C bin fft
+	rm -rf results/fft
+	cp -r bin results/fft
+
+reed:
+	@clear
+	$(MAKE) -C bin reed
+	rm -rf results/reed
+	cp -r bin results/reed
+
+arb:
+	@clear
+	$(MAKE) -C bin arb
+	rm -rf results/arb
+	cp -r bin results/arb
+
+sha3_low:
+	@clear
+	$(MAKE) -C bin sha3_low
+	rm -rf results/sha3_low
+	cp -r bin results/sha3_low
+
+sha3_high:
+	@clear
+	$(MAKE) -C bin sha3_high
+	rm -rf results/sha3_high
+	cp -r bin results/sha3_high
+
+wb_uart:
+	@clear
+	$(MAKE) -C bin wb_uart
+	rm -rf results/wb_uart
+	cp -r bin results/wb_uart
+
+wb_flash:
+	@clear
+	$(MAKE) -C bin wb_flash
+	rm -rf results/wb_flash
+	cp -r bin results/wb_flash
+
 sdr_ctl:
 	@clear
 	$(MAKE) -C bin sdr_ctl
@@ -137,9 +179,10 @@ ex_dataflow:
 run:
 	@echo "Run the executables"
 
-all: clean aes-128 apbtoaes mips32 mips_16 or1200 or1200hp pid vscale mesi_isc sdram_16bit sdr_ctl i2c simple amber 
+all: clean amber vscale apbtoaes i2c
+	#clean wb_uart wb_flash sha3_low sha3_high arb reed fft aes-128 apbtoaes mips32 mips_16 or1200 or1200hp pid vscale mesi_isc sdram_16bit sdr_ctl i2c amber 
 	#openmsp 
-	#decode wishbone 
+	#opensparc 
 	 
 
 clean:

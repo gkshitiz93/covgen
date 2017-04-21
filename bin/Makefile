@@ -1,4 +1,6 @@
 #Makefile for execution
+FLAGS = --unique --ex
+##Directories
 OPENDIR = /home/local/twin/kshitiz/coverage/rtl/OpenSPARC/design/sys/iop
 FIFODIR = /home/local/twin/kshitiz/coverage/rtl/examples/fifos/generic_fifos/trunk/rtl/verilog
 I2CDIR = /home/local/twin/kshitiz/coverage/rtl/examples/i2c/i2c_master_slave_core/trunk/i2c_master_slave_core/verilog/rtl
@@ -13,7 +15,17 @@ MIPS32=/home/local/twin/kshitiz/coverage/rtl/examples/mips32/mips32/trunk/Classi
 MIPS16=/home/local/twin/kshitiz/coverage/rtl/examples/mips_16/mips_16/trunk/rtl
 APB2AES=/home/local/twin/kshitiz/coverage/rtl/examples/apbtoaes128/apbtoaes128/trunk/rtl
 AES128DIR=/home/local/twin/kshitiz/coverage/rtl/examples/aes-128/aes-128_pipelined_encryption/trunk/rtl
-FLAGS = --unique  
+fftdir=/home/local/twin/kshitiz/coverage/rtl/examples/fft/pipelined_fft_256/trunk/SRC
+RSDIR=/home/local/twin/kshitiz/coverage/rtl/examples/reed/reed_solomon_decoder/trunk/rtl
+ARBDIR=/home/local/twin/kshitiz/coverage/rtl/examples/round_robin_arbiter/round_robin_arbiter/trunk
+SHA3LOW=/home/local/twin/kshitiz/coverage/rtl/examples/sha3/sha3/trunk/low_throughput_core/rtl
+SHA3HIGH=/home/local/twin/kshitiz/coverage/rtl/examples/sha3/sha3/trunk/high_throughput_core/rtl
+WBFLASHDIR=/home/local/twin/kshitiz/coverage/rtl/examples/wb_flash/wb_flash/trunk/rtl/verilog
+WBUART=/home/local/twin/kshitiz/coverage/rtl/examples/wbuart/wbuart32/trunk/rtl
+
+
+
+
 test: clean
 	@python ../src/main.py $(FLAGS) -t top ../rtl/test.v
 
@@ -51,7 +63,7 @@ wishbone: clean
 	@python ../src/main.py $(FLAGS) -t top ../rtl/wishbone.v
 
 opensparc: clean
-	@python ../src/main.py -I $(OPENDIR)/../../../verif/env/common/verilog/misc -I $(OPENDIR)/../../../verif/env/fc -I $(OPENDIR)/ccu/rtl/ -I $(OPENDIR)/ccx/rtl/ -I $(OPENDIR)/cmp/rtl/ -I $(OPENDIR)/cpu/rtl/ -I $(OPENDIR)/db0/rtl/ -I $(OPENDIR)/db1/rtl/ -I $(OPENDIR)/dmu/rtl/ -I $(OPENDIR)/efu/rtl/ -I $(OPENDIR)/esr/rtl/ -I $(OPENDIR)/fsr/rtl/ -I $(OPENDIR)/fsr_bottom/rtl/ -I $(OPENDIR)/fsr_left/rtl/ -I $(OPENDIR)/fsr_right/rtl/ -I $(OPENDIR)/l2b/rtl/ -I $(OPENDIR)/l2t/rtl/ -I $(OPENDIR)/mac/rtl/ -I $(OPENDIR)/mcu/rtl/ -I $(OPENDIR)/mio/rtl/ -I $(OPENDIR)/ncu/rtl/ -I $(OPENDIR)/niu/rtl/ -I $(OPENDIR)/pcie_common/rtl/ -I $(OPENDIR)/rdp/rtl/ -I $(OPENDIR)/rst/rtl/ -I $(OPENDIR)/rtx/rtl/ -I $(OPENDIR)/sii/rtl/ -I $(OPENDIR)/sio/rtl/ -I $(OPENDIR)/spc/rtl/ -I $(OPENDIR)/tcu/rtl/ -I $(OPENDIR)/tds/rtl/ $(FLAGS) -t cpu $(OPENDIR)/cmp/rtl/*.v $(OPENDIR)/cpu/rtl/*.v $(OPENDIR)/db0/rtl/*.v $(OPENDIR)/db1/rtl/*.v $(OPENDIR)/efu/rtl/*.v $(OPENDIR)/fsr_bottom/rtl/*.v $(OPENDIR)/fsr_left/rtl/*.v $(OPENDIR)/fsr_right/rtl/*.v $(OPENDIR)/l2b/rtl/*.v $(OPENDIR)/mac/rtl/*.v $(OPENDIR)/mcu/rtl/*.v $(OPENDIR)/ncu/rtl/*.v $(OPENDIR)/rdp/rtl/*.v $(OPENDIR)/rst/rtl/*.v $(OPENDIR)/rtx/rtl/*.v $(OPENDIR)/sii/rtl/*.v $(OPENDIR)/sio/rtl/*.v $(OPENDIR)/spc/rtl/*.v $(OPENDIR)/tcu/rtl/*.v $(OPENDIR)/tds/rtl/*.v #$(OPENDIR)/ccu/rtl/*.v $(OPENDIR)/ccx/rtl/*.v $(OPENDIR)/l2t/rtl/*.v #$(OPENDIR)/dmu/rtl/*.v $(OPENDIR)/fsr/rtl/*.v  $(OPENDIR)/mio/rtl/*.v $(OPENDIR)/niu/rtl/*.v $(OPENDIR)/pcie_common/rtl/*.v $(OPENDIR)/esr/rtl/*.v 
+	@python ../src/main.py -I $(OPENDIR)/../../../verif/env/common/verilog/misc -I $(OPENDIR)/../../../verif/env/fc -I $(OPENDIR)/ccu/rtl/ -I $(OPENDIR)/ccx/rtl/ -I $(OPENDIR)/cmp/rtl/ -I $(OPENDIR)/cpu/rtl/ -I $(OPENDIR)/db0/rtl/ -I $(OPENDIR)/db1/rtl/ -I $(OPENDIR)/dmu/rtl/ -I $(OPENDIR)/efu/rtl/ -I $(OPENDIR)/esr/rtl/ -I $(OPENDIR)/fsr/rtl/ -I $(OPENDIR)/fsr_bottom/rtl/ -I $(OPENDIR)/fsr_left/rtl/ -I $(OPENDIR)/fsr_right/rtl/ -I $(OPENDIR)/l2b/rtl/ -I $(OPENDIR)/l2t/rtl/ -I $(OPENDIR)/mac/rtl/ -I $(OPENDIR)/mcu/rtl/ -I $(OPENDIR)/mio/rtl/ -I $(OPENDIR)/ncu/rtl/ -I $(OPENDIR)/niu/rtl/ -I $(OPENDIR)/pcie_common/rtl/ -I $(OPENDIR)/rdp/rtl/ -I $(OPENDIR)/rst/rtl/ -I $(OPENDIR)/rtx/rtl/ -I $(OPENDIR)/sii/rtl/ -I $(OPENDIR)/sio/rtl/ -I $(OPENDIR)/spc/rtl/ -I $(OPENDIR)/tcu/rtl/ -I $(OPENDIR)/tds/rtl/ $(FLAGS) -t cpu $(OPENDIR)/cmp/rtl/*.v $(OPENDIR)/cpu/rtl/*.v $(OPENDIR)/db0/rtl/*.v $(OPENDIR)/db1/rtl/*.v $(OPENDIR)/efu/rtl/*.v $(OPENDIR)/fsr_bottom/rtl/*.v $(OPENDIR)/fsr_left/rtl/*.v $(OPENDIR)/fsr_right/rtl/*.v $(OPENDIR)/l2b/rtl/*.v $(OPENDIR)/mac/rtl/*.v $(OPENDIR)/mcu/rtl/*.v $(OPENDIR)/ncu/rtl/*.v $(OPENDIR)/rdp/rtl/*.v $(OPENDIR)/rst/rtl/*.v $(OPENDIR)/rtx/rtl/*.v $(OPENDIR)/sii/rtl/*.v $(OPENDIR)/sio/rtl/*.v $(OPENDIR)/spc/rtl/*.v $(OPENDIR)/tcu/rtl/*.v $(OPENDIR)/tds/rtl/*.v $(OPENDIR)/ccu/rtl/*.v $(OPENDIR)/ccx/rtl/*.v $(OPENDIR)/l2t/rtl/*.v #$(OPENDIR)/dmu/rtl/*.v #$(OPENDIR)/fsr/rtl/*.v  $(OPENDIR)/mio/rtl/*.v $(OPENDIR)/niu/rtl/*.v $(OPENDIR)/pcie_common/rtl/*.v $(OPENDIR)/esr/rtl/*.v 
 
 i2c: clean
 	@python ../src/main.py $(FLAGS) -I $(I2CDIR) -t core $(I2CDIR)/*.v 
@@ -78,7 +90,9 @@ mips32: clean
 	@python ../src/main.py $(FLAGS) -I $(MIPS32) -t PipelineMIPS $(MIPS32)/*.v
 	
 openmsp: clean
-	@python ../src/main.py $(FLAGS) -I $(msp430)/defines/ -t openMSP430 $(msp430)/*.v $(msp430)/periph/*.v
+	@python ../src/main.py $(FLAGS) -I $(msp430)/defines/ -t omsp_dbg $(msp430)/*.v $(msp430)/periph/*.v
+	@python ../src/main.py $(FLAGS) -I $(msp430)/defines/ -t omsp_dbg_i2c $(msp430)/*.v $(msp430)/periph/*.v
+	@python ../src/main.py $(FLAGS) -I $(msp430)/defines/ -t omsp_frontend $(msp430)/*.v $(msp430)/periph/*.v
 	
 or1200: clean
 	@python ../src/main.py $(FLAGS) -I $(or1200) -i or1200_spram -t or1200_top $(or1200)/*.v
@@ -91,3 +105,26 @@ pid: clean
 
 vscale: clean
 	@python ../src/main.py $(FLAGS) -I $(VSCALE) -t vscale_core $(VSCALE)/*.v
+	#@python ../src/example_dataflow_analyzer.py -I $(VSCALE) -t vscale_mul_div $(VSCALE)/*.v
+
+fft: clean
+	@python ../src/main.py $(FLAGS) -I $(fftdir) -t FFT256 $(fftdir)/*.v
+
+reed: clean
+	@python ../src/main.py $(FLAGS) -I $(RSDIR) -t RS_dec $(RSDIR)/*.v
+
+arb: clean
+	@python ../src/main.py $(FLAGS) -I $(ARBDIR) -t round_robin_arbiter $(ARBDIR)/round_robin_arbiter2.v
+
+sha3_low: clean
+	@python ../src/main.py $(FLAGS) -I $(SHA3LOW) -t keccak $(SHA3LOW)/*.v
+
+sha3_high: clean
+	@python ../src/main.py $(FLAGS) -I $(SHA3HIGH) -t keccak $(SHA3HIGH)/*.v
+
+wb_flash: clean
+	@python ../src/main.py $(FLAGS) -I $(WBFLASHDIR) -t wb_flash $(WBFLASHDIR)/*.v
+
+wb_uart: clean
+	@python ../src/main.py $(FLAGS) -I $(WBUART) -t wbuart $(WBUART)/*.v
+
